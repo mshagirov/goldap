@@ -1,0 +1,39 @@
+# test user 1
+dn: uid=aburgers,ou=Devs,ou=People,dc=example,dc=com
+changetype: add
+objectClass: top
+objectClass: inetOrgPerson
+description: Allison Burgers. Allison is the project
+  manager of the Dev team.
+cn: Allison Burgers
+employeeType: Full-time
+sn: Burgers
+uid: aburgers
+uidNumber: 100
+gidNumber: 100
+
+# test user 2
+dn: uid=jsmith1,ou=Devs,ou=People,dc=example,dc=com
+changetype: add
+objectClass: inetOrgPerson
+description: John Smith from Dev.  John is a software
+  developer.
+cn: John Smith
+employeeType: Full-time
+sn: Smith
+uid: jsmith1
+uidNumber: 1000
+gidNumber: 1000
+
+# test user 3
+dn: uid=jbourne,ou=Devs,ou=People,dc=example,dc=com
+changetype: add
+objectClass: inetOrgPerson
+description: Jason Bourne from Dev team.  Jason is an intern.
+cn: Jason Bourne
+employeeType: Intern
+sn: Bourne
+uid: jbourne
+uidNumber: 1000
+gidNumber: 1000
+

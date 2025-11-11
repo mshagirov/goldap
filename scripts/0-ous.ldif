@@ -1,0 +1,33 @@
+dn: ou=People,dc=goldap,dc=sh
+objectClass: top
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Group,dc=goldap,dc=sh
+objectClass: top
+objectClass: organizationalUnit
+ou: Group
+
+dn: ou=Devs,dc=goldap,dc=sh
+objectClass: top
+objectClass: organizationalUnit
+ou: Devs
+
+# test Group 1
+dn: cn=Managers,ou=Group,dc=goldap,dc=sh
+changetype: add
+cn: Managers
+objectClass: top
+objectClass: posixGroup
+description: Managers posix group
+gidNumber: 100
+
+# test Group 2
+dn: cn=Users,ou=Group,dc=goldap,dc=sh
+changetype: add
+cn: Users
+objectClass: top
+objectClass: posixGroup
+description: Users posix group
+gidNumber: 1000
+
