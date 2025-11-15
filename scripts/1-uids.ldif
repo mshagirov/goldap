@@ -10,6 +10,7 @@ description: Allison Burgers. Allison is the project
   manager of the Dev team.
 givenName: Allison
 sn: Burgers
+mail: agurgers@goldap.sh
 uidNumber: 100
 gidNumber: 100
 homeDirectory: /home/aburgers
@@ -27,6 +28,7 @@ description: John Smith from Dev. John is a software
   developer.
 givenName: John
 sn: Smith
+mail: jsmith1@goldap.sh
 uidNumber: 1000
 gidNumber: 1000
 homeDirectory: /home/jsmith1
@@ -43,6 +45,7 @@ cn: Jason Bourne
 description: Jason Bourne from Dev team.  Jason is a software
   engineer. He could be a spy ... we don't really know.
 givenName: Jason
+mail: jbourne@goldap.sh
 sn: Bourne
 uidNumber: 1000
 gidNumber: 1000
