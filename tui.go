@@ -1,4 +1,4 @@
-package tui
+package main
 
 import (
 	"fmt"
@@ -8,18 +8,18 @@ import (
 
 type model struct {
 	cursor   int
-	Choices  []string
-	Selected map[int]struct{}
+	choices  []string
+	selected map[int]struct{}
 }
 
 func initialModel(listOfChoices []string) model {
 	return model{
-		Choices: listOfChoices,
+		choices: listOfChoices,
 
 		// A map which indicates which choices are selected. We're using
 		// the map like a mathematical set. The keys refer to the indexes
 		// of the `choices` slice, above.
-		Selected: make(map[int]struct{}),
+		selected: make(map[int]struct{}),
 	}
 }
 
@@ -45,15 +45,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.Choices)-1 {
+			if m.cursor < len(m.choices)-1 {
 				m.cursor++
 			}
 		case "enter", " ":
-			_, ok := m.Selected[m.cursor]
+			_, ok := m.selected[m.cursor]
 			if ok {
-				delete(m.Selected, m.cursor)
+				delete(m.selected, m.cursor)
 			} else {
-				m.Selected[m.cursor] = struct{}{}
+				m.selected[m.cursor] = struct{}{}
 			}
 		}
 	}
@@ -62,16 +62,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	s := "Choices:\n\n"
+	s := "choices:\n\n"
 
-	for i, choice := range m.Choices {
+	for i, choice := range m.choices {
 		cursor := " "
 		if m.cursor == i {
 			cursor = ">"
 		}
 
 		checked := " "
-		if _, ok := m.Selected[i]; ok {
+		if _, ok := m.selected[i]; ok {
 			checked = "x"
 		}
 
