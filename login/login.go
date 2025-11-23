@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -14,27 +13,27 @@ var (
 	focusedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("205")).PaddingTop(2).PaddingLeft(4)
 	blurredStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240")).PaddingTop(2).PaddingLeft(4)
+			Foreground(lipgloss.Color("240")).PaddingLeft(4)
 
 	cursorStyle        = focusedStyle
 	noStyle            = lipgloss.NewStyle().PaddingTop(2).PaddingLeft(4)
+	titleText   string = `LDAP Administrator Password`
+	titleSyle          = blurredStyle.PaddingTop(2).Bold(true)
 	helpStyle          = blurredStyle
-	helpText    string = `enter LDAP administrator password
-(press esc or ctrl+c to exit)`
+	helpText    string = `(press esc or ctrl+c to exit)`
 
 	focusedButton = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("205")).PaddingTop(2).PaddingLeft(4).
+			Foreground(lipgloss.Color("205")).PaddingLeft(4).
 			Render("[ Submit ]")
 	blurredButton = fmt.Sprintf("%s",
 		lipgloss.NewStyle().Foreground(
-			lipgloss.Color("240")).PaddingTop(2).PaddingLeft(4).
+			lipgloss.Color("240")).PaddingLeft(4).
 			Render("[ Submit ]"))
 )
 
 type model struct {
 	focusIndex int
 	inputs     []textinput.Model
-	cursorMode cursor.Mode
 }
 
 func initialModel() model {
@@ -61,7 +60,7 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(tea.SetWindowTitle("goldap | login"), textinput.Blink)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -133,6 +132,8 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 
 func (m model) View() string {
 	var b strings.Builder
+
+	b.WriteString(titleSyle.Render(titleText))
 
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())
