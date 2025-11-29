@@ -53,7 +53,7 @@ var (
 	blurredColor      = lipgloss.Color("241")
 	inactiveTabStyle  = lipgloss.NewStyle().Foreground(blurredColor).Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Foreground(highlightColor).BorderForeground(highlightColor).Border(activeTabBorder, true)
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Align(lipgloss.Center).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Align(lipgloss.Left).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 	fillerBorderStyle = lipgloss.NewStyle().Border(
 		lipgloss.Border{Bottom: "─", BottomRight: "┐"}, false, true, true, false).
 		BorderForeground(highlightColor)

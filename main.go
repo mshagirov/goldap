@@ -28,32 +28,42 @@ func main() {
 		Secret: secret,
 	}
 
-	// filter := "(objectClass=*)" // all classes
-	filter := "(objectClass=PosixAccount)" // all PosixGroups
-	// filter := "(objectClass=PosixGroup)" // all PosixGroups
-	// filter := "(uid=*)" // all ldap users
-	// filter := "(cn=*)" // all ldap users
-	// filter := fmt.Sprintf("(uid=%s)", "jbourne") // find user
-
-	sr, err := ldap.Search(filter)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	filters := []string{
+		"PosixAccount",       // all PosixGroups
+		"PosixGroup",         // all PosixGroups
+		"OrganizationalUnit", // ou's
 	}
+	// "(objectClass=*)" // all classes
+	// "(uid=*)" // all ldap users
+	// "(cn=*)" // all ldap users
+	// fmt.Sprintf("(uid=%s)", "jbourne") // find user
 
-	for _, entry := range sr.Entries {
-		fmt.Println("dn:", entry.DN)
-		if len(entry.GetAttributeValue("uid")) > 1 {
-			fmt.Printf("%v\n", entry.GetAttributeValue("uid"))
+	var contents []string
+
+	for i, filter := range filters {
+		sr, err := ldap.Search(fmt.Sprintf("(objectClass=%v)", filter))
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		// for _, attr := range entry.Attributes {
-		// 	fmt.Printf("    |-- %v: %v\n", attr.Name, attr.Values)
-		// }
+
+		contents = append(contents, "")
+		for _, entry := range sr.Entries {
+			contents[i] += fmt.Sprintln("dn:", entry.DN)
+			for _, attr := range entry.Attributes {
+				for _, val := range attr.Values {
+					contents[i] += fmt.Sprintf(" | %v: '%v'\n", attr.Name, val)
+				}
+			}
+		}
 	}
 
 	runTabs(
-		[]string{"Users", "Groups", "Orgs"},
-		[]string{"User1, user2,...", "group1, group2,...", "Managers, Devs"},
+		// []string{"Users", "Groups", "Orgs"},
+		//[]string{"User1, user2,...", "group1, group2,...", "Managers, Devs"},
+		filters,
+		contents,
 	)
 
 }
