@@ -1,25 +1,26 @@
 package tabs
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 )
 
 type Model struct {
-	TabNames   []string
-	TabContent []string
-	ActiveTab  int
+	TabNames  []string
+	Tables    []table.Model
+	ActiveTab int
 }
 
-func (m Model) Init() tea.Cmd {
-	return nil
-}
+func (m Model) Init() tea.Cmd { return nil }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -31,10 +32,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "p", "shift+tab":
 			m.ActiveTab = max(m.ActiveTab-1, 0)
 			return m, nil
+			// case "enter", "l" , "left":
+			//   selected info --> m.Tables[m.ActiveTab].SelectedRow() : 1xN slice/array
+			//   return m, tea.Batch(...)
 		}
 	}
-
-	return m, nil
+	m.Tables[m.ActiveTab], cmd = m.Tables[m.ActiveTab].Update(msg)
+	return m, cmd
 }
 
 func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
@@ -53,16 +57,39 @@ var (
 	blurredColor      = lipgloss.Color("241")
 	inactiveTabStyle  = lipgloss.NewStyle().Foreground(blurredColor).Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Foreground(highlightColor).BorderForeground(highlightColor).Border(activeTabBorder, true)
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Align(lipgloss.Left).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().
+				BorderForeground(highlightColor).
+				Align(lipgloss.Left).
+				BorderStyle(lipgloss.NormalBorder()).
+				Border(lipgloss.NormalBorder()).
+				UnsetBorderTop()
 	fillerBorderStyle = lipgloss.NewStyle().Border(
 		lipgloss.Border{Bottom: "─", BottomRight: "┐"}, false, true, true, false).
 		BorderForeground(highlightColor)
 )
 
-func (m Model) View() string {
-	physicalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
+func GetTableStyle() table.Styles {
+	s := table.DefaultStyles()
+	hlColor := lipgloss.AdaptiveColor{Light: "#0014a8", Dark: "#265ef7"}
+	s.Header = s.Header.Foreground(hlColor)
+	s.Selected = s.Selected.Foreground(lipgloss.AdaptiveColor{Light: "#000000", Dark: "#ffffff"}).Background(hlColor)
+	return s
+}
+
+func GetTabledDimensions() (int, int) {
+	termWidth, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
-		physicalWidth = 20
+		termWidth, termHeight = 20, 20
+	}
+
+	w, h := windowStyle.GetHorizontalFrameSize(), windowStyle.GetVerticalFrameSize()
+	return (termWidth - w), (termHeight - 7*h)
+}
+
+func (m Model) View() string {
+	termWidth, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		termWidth, termHeight = 20, 20
 	}
 
 	doc := strings.Builder{}
@@ -92,15 +119,26 @@ func (m Model) View() string {
 	}
 
 	row := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
-	if remainingWidth := physicalWidth - lipgloss.Width(row); remainingWidth > 0 {
+	if remainingWidth := termWidth - lipgloss.Width(row); remainingWidth > 0 {
 		fillStyle := fillerBorderStyle.Width(remainingWidth - 1)
 		row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, fillStyle.Render(""))
 	}
+	tab_h, tab_w := windowStyle.GetVerticalFrameSize(), windowStyle.GetHorizontalFrameSize()
 	doc.WriteString(row)
 	doc.WriteString("\n")
 	doc.WriteString(
-		windowStyle.Width((physicalWidth - windowStyle.GetHorizontalFrameSize())).
-			Render(m.TabContent[m.ActiveTab]),
+		windowStyle.Width(termWidth - tab_w).
+			Height(termHeight - tab_h*7).
+			Render(m.Tables[m.ActiveTab].View()),
 	)
-	return docStyle.Width(physicalWidth).Render(doc.String())
+	return docStyle.Width(termWidth).Height(termHeight - tab_h*2).Render(doc.String())
+}
+
+func Run(names []string, tables []table.Model) {
+
+	m := Model{TabNames: names, Tables: tables}
+	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+		fmt.Println("Error running program:", err)
+		os.Exit(1)
+	}
 }
