@@ -30,14 +30,14 @@ func main() {
 		Secret: secret,
 	}
 
-	filters := []struct {
-		name   string
-		filter string
-	}{
-		{name: "Users", filter: "PosixAccount"},     // all PosixGroups
-		{name: "Groups", filter: "PosixGroup"},      // all PosixGroups
-		{name: "OUs", filter: "OrganizationalUnit"}, // ou's
-	}
+	// filters := []struct {
+	// 	name   string
+	// 	filter string
+	// }{
+	// 	{name: "Users", filter: "PosixAccount"},     // all PosixGroups
+	// 	{name: "Groups", filter: "PosixGroup"},      // all PosixGroups
+	// 	{name: "OUs", filter: "OrganizationalUnit"}, // ou's
+	// }
 	// "(objectClass=*)" // all classes
 	// "(uid=*)" // all ldap users
 	// "(cn=*)" // all ldap users
@@ -50,56 +50,29 @@ func main() {
 
 	w, h := tabs.GetTabledDimensions()
 
-	for _, f := range filters {
-		sr, err := ldap.Search(fmt.Sprintf("(objectClass=%v)", f.filter))
-		tabnames = append(tabnames, f.name)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+	users := ldap.Users()
 
-		col_names_map := make(map[string]struct{})
-		for _, entry := range sr.Entries {
-			for _, attr := range entry.Attributes {
-				col_names_map[attr.Name] = struct{}{}
-			}
-		}
+	contents = append(contents,
+		table.New(table.WithColumns(users[0].Cols),
+			table.WithRows(users[0].Rows),
+			table.WithFocused(true),
+			table.WithHeight(h),
+			table.WithWidth(w),
+			table.WithStyles(tabs.GetTableStyle()),
+		),
+	)
+	tabnames = append(tabnames, "Users")
 
-		col_names := make([]string, 0, len(col_names_map))
-		for n := range col_names_map {
-			col_names = append(col_names, n)
-		}
-
-		rows := []table.Row{}
-		for _, entry := range sr.Entries {
-			row_i := make([]string, len(col_names))
-			for _, attr := range entry.Attributes {
-				for n_i, n := range col_names {
-					if n == attr.Name {
-						row_i[n_i] = fmt.Sprintf("%v", attr.Values)
-					}
-				}
-			}
-			row_i = append(row_i, entry.DN)
-			rows = append(rows, row_i)
-		}
-		cols := []table.Column{}
-		for _, n := range col_names {
-			cols = append(cols, table.Column{Title: n, Width: len(n) + 2})
-		}
-		cols = append(cols, table.Column{Title: "DN", Width: 4})
-
-		contents = append(contents,
-			table.New(table.WithColumns(cols),
-				table.WithRows(rows),
-				table.WithFocused(true),
-				table.WithHeight(h),
-				table.WithWidth(w),
-				table.WithStyles(tabs.GetTableStyle()),
-			),
-		)
-
-	}
+	contents = append(contents,
+		table.New(table.WithColumns(users[1].Cols),
+			table.WithRows(users[1].Rows),
+			table.WithFocused(true),
+			table.WithHeight(h),
+			table.WithWidth(w),
+			table.WithStyles(tabs.GetTableStyle()),
+		),
+	)
+	tabnames = append(tabnames, "Groups")
 
 	tabs.Run(tabnames, contents)
 }

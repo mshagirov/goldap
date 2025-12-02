@@ -37,3 +37,25 @@ func (api *LdapApi) Search(filter string) (*ldap.SearchResult, error) {
 	}
 	return res, err
 }
+
+func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
+	return api.Search(UserFilter)
+}
+
+func (api *LdapApi) ListGroups() (*ldap.SearchResult, error) {
+	return api.Search(GroupFilter)
+}
+
+func (api *LdapApi) Users() [2]TableInfo {
+	var t [2]TableInfo
+	usrRes, err := api.ListUsers()
+	if err == nil {
+		LoadTableInfoFromSearchResults(&t[0], UsrCols, UsrAttr, UsrColsWidth, usrRes)
+	}
+
+	grpRes, err := api.ListGroups()
+	if err == nil {
+		LoadTableInfoFromSearchResults(&t[1], GrpCols, GrpAttr, GrpColsWidth, grpRes)
+	}
+	return t
+}
