@@ -14,6 +14,7 @@ import (
 type Model struct {
 	TabNames  []string
 	Tables    []table.Model
+	DN        [][]string
 	ActiveTab int
 }
 
@@ -24,13 +25,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 		case "n", "tab":
-			m.ActiveTab = min(m.ActiveTab+1, len(m.TabNames)-1)
+			m.ActiveTab = (m.ActiveTab + 1) % len(m.TabNames)
 			return m, nil
 		case "p", "shift+tab":
-			m.ActiveTab = max(m.ActiveTab-1, 0)
+			m.ActiveTab = (m.ActiveTab - 1 + len(m.TabNames)) % len(m.TabNames)
 			return m, nil
 			// case "enter", "l" , "left":
 			//   selected info --> m.Tables[m.ActiveTab].SelectedRow() : 1xN slice/array
@@ -52,7 +53,7 @@ func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
 var (
 	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
-	docStyle          = lipgloss.NewStyle().Padding(0, 0, 2, 0)
+	docStyle          = lipgloss.NewStyle().Padding(0, 0, 0, 0)
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#DAA520", Dark: "#FFD700"}
 	blurredColor      = lipgloss.Color("241")
 	inactiveTabStyle  = lipgloss.NewStyle().Foreground(blurredColor).Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
@@ -66,6 +67,9 @@ var (
 	fillerBorderStyle = lipgloss.NewStyle().Border(
 		lipgloss.Border{Bottom: "─", BottomRight: "┐"}, false, true, true, false).
 		BorderForeground(highlightColor)
+	infoBarStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "#3B3B3B", Dark: "#ADADAD"}).
+			Align(lipgloss.Right)
 )
 
 func GetTableStyle() table.Styles {
@@ -76,20 +80,19 @@ func GetTableStyle() table.Styles {
 	return s
 }
 
-func GetTabledDimensions() (int, int) {
+func GetTableDimensions() (int, int) {
 	termWidth, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		termWidth, termHeight = 20, 20
 	}
-
 	w, h := windowStyle.GetHorizontalFrameSize(), windowStyle.GetVerticalFrameSize()
-	return (termWidth - w), (termHeight - 7*h)
+	return (termWidth - w), (termHeight - 6*h)
 }
 
 func (m Model) View() string {
-	termWidth, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
+	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
-		termWidth, termHeight = 20, 20
+		termWidth = 20
 	}
 
 	doc := strings.Builder{}
@@ -123,20 +126,26 @@ func (m Model) View() string {
 		fillStyle := fillerBorderStyle.Width(remainingWidth - 1)
 		row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, fillStyle.Render(""))
 	}
-	tab_h, tab_w := windowStyle.GetVerticalFrameSize(), windowStyle.GetHorizontalFrameSize()
+
+	w, h := GetTableDimensions()
+	m.Tables[m.ActiveTab].SetWidth(w)
+	m.Tables[m.ActiveTab].SetHeight(h)
+
+	dn := m.DN[m.ActiveTab][m.Tables[m.ActiveTab].Cursor()]
+
 	doc.WriteString(row)
 	doc.WriteString("\n")
-	doc.WriteString(
-		windowStyle.Width(termWidth - tab_w).
-			Height(termHeight - tab_h*7).
-			Render(m.Tables[m.ActiveTab].View()),
+	doc.WriteString(windowStyle.Width(w).Height(h).
+		Render(m.Tables[m.ActiveTab].View() +
+			infoBarStyle.Width(w).Render(fmt.Sprintf("\n%v", dn))),
 	)
-	return docStyle.Width(termWidth).Height(termHeight - tab_h*2).Render(doc.String())
+
+	out := docStyle.Width(termWidth).Height(h).Render(doc.String())
+	return out
 }
 
-func Run(names []string, tables []table.Model) {
-
-	m := Model{TabNames: names, Tables: tables}
+func Run(names []string, tables []table.Model, dn [][]string) {
+	m := Model{TabNames: names, Tables: tables, DN: dn}
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
