@@ -29,9 +29,6 @@ func main() {
 	}
 
 	// "(objectClass=*)" // all classes
-	// "(uid=*)" // all ldap users
-	// "(cn=*)" // all ldap users
-	// fmt.Sprintf("(uid=%s)", "jbourne") // find user
 
 	var (
 		tabnames = []string{"Users", "Groups", "OrgUnits"}
