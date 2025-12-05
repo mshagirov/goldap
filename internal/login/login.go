@@ -49,10 +49,10 @@ func initialModel() model {
 	var t textinput.Model
 	t = textinput.New()
 	t.Cursor.Style = cursorStyle
-	t.CharLimit = 32
+	t.Width = 15
+	t.CharLimit = 30
 
-	// placeholder problem: displays only 1st char
-	t.Placeholder = "_____"
+	t.Placeholder = "Password"
 	t.EchoMode = textinput.EchoPassword
 	t.EchoCharacter = '•'
 	t.PromptStyle = focusedStyle
@@ -168,5 +168,9 @@ func Run() (string, error) {
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		return "", fmt.Errorf("could not start program: %s", err)
 	}
-	return m.inputs[0].Value(), nil
+	secret := m.inputs[0].Value()
+	if len(secret) < 1 {
+		return "", fmt.Errorf("LDAP password not provided")
+	}
+	return secret, nil
 }
