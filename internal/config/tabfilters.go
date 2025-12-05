@@ -3,6 +3,7 @@ package config
 const (
 	UserFilter  = "(objectClass=PosixAccount)"
 	GroupFilter = "(objectClass=PosixGroup)"
+	OUsFilter   = "(objectClass=OrganizationalUnit)"
 )
 
 var (
@@ -15,11 +16,19 @@ var (
 	}
 	UsrColsWidth = []int{15, 5, 15, 10, 25}
 
-	GrpCols = []string{"Name", "gid", "dn"}
+	GrpCols = []string{"Name", "gid", "Description"}
 	GrpAttr = map[string]string{
-		"cn":        "Name",
-		"gidNumber": "gid",
-		"dn":        "dn",
+		"cn":          "Name",
+		"gidNumber":   "gid",
+		"description": "Description",
 	}
 	GrpColsWidth = []int{15, 5, 25}
+
+	OUCols = []string{"Name", "dn", "Description"}
+	OUAttr = map[string]string{
+		"ou":          "Name",
+		"dn":          "dn",
+		"description": "Description",
+	}
+	OUColsWidth = []int{15, 25, 25}
 )

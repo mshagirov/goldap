@@ -50,28 +50,25 @@ func (api *LdapApi) ListOUs() (*ldap.SearchResult, error) {
 	return api.Search(OUsFilter)
 }
 
-func (api *LdapApi) GetTableInfo(s string) TableInfo {
+func (api *LdapApi) GetTableInfo(s string) (TableInfo, error) {
 	var t TableInfo
 	switch s {
 	case "Users":
 		if usrRes, err := api.ListUsers(); err == nil {
 			LoadTableInfoFromSearchResults(&t, UsrCols, UsrAttr, UsrColsWidth, usrRes)
 		}
-		return t
+		return t, nil
 	case "Groups":
 		if grpRes, err := api.ListGroups(); err == nil {
 			LoadTableInfoFromSearchResults(&t, GrpCols, GrpAttr, GrpColsWidth, grpRes)
 		}
-		return t
+		return t, nil
 	case "OrgUnits":
 		if ouRes, err := api.ListOUs(); err == nil {
 			LoadTableInfoFromSearchResults(&t, OUCols, OUAttr, OUColsWidth, ouRes)
 		}
-		return t
+		return t, nil
 	default:
-		// if sr, err:= api.Search(s); err == nil {
-		// 	?
-		// }
-		return t
+		return t, fmt.Errorf("LdapApi.GetTableInfo: the input '%v' value not recognised", s)
 	}
 }

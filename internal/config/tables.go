@@ -40,6 +40,7 @@ func LoadTableInfoFromSearchResults(
 	ti.Cols = MakeColumns(colNames, widths)
 	ti.Rows = []table.Row{}
 	ti.DN = []string{}
+
 	for _, entry := range sr.Entries {
 		row_i := make([]string, len(colNames))
 		if val, ok := colAtrr["dn"]; ok {

@@ -39,7 +39,11 @@ func main() {
 	w, h := tabs.GetTableDimensions()
 
 	for _, tabName := range tabnames {
-		t := ldap.GetTableInfo(tabName)
+		t, err := ldap.GetTableInfo(tabName)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
+		}
 		contents = append(contents,
 			table.New(table.WithColumns(t.Cols),
 				table.WithRows(t.Rows),
