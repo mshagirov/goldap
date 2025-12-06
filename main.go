@@ -29,6 +29,11 @@ func main() {
 		Secret: secret,
 	}
 
+	if err := ldap.TryConnecting(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	// "(objectClass=*)" // all classes
 
 	var (

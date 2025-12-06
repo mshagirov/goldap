@@ -12,6 +12,15 @@ type LdapApi struct {
 	Secret string
 }
 
+func (api *LdapApi) TryConnecting() error {
+	l, err := ldap.DialURL(api.Config.LdapUrl)
+	if err != nil {
+		return fmt.Errorf("DialURL Error; %v", err)
+	}
+	defer l.Close()
+	return nil
+}
+
 func (api *LdapApi) Search(filter string) (*ldap.SearchResult, error) {
 	l, err := ldap.DialURL(api.Config.LdapUrl)
 	if err != nil {
