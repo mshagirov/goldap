@@ -1,13 +1,14 @@
-package config
+package ldapapi
 
 import (
 	"fmt"
 
 	"github.com/go-ldap/ldap/v3"
+	"github.com/mshagirov/goldap/internal/config"
 )
 
 type LdapApi struct {
-	Config *Config
+	Config *config.Config
 	Secret string
 }
 

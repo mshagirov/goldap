@@ -1,4 +1,4 @@
-package config
+package ldapapi
 
 const (
 	UserFilter  = "(objectClass=PosixAccount)"

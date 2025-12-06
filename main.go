@@ -8,6 +8,7 @@ import (
 	"github.com/mshagirov/goldap/internal/config"
 	"github.com/mshagirov/goldap/internal/login"
 	"github.com/mshagirov/goldap/internal/tabs"
+	"github.com/mshagirov/goldap/ldapapi"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ldap := config.LdapApi{
+	ldap := ldapapi.LdapApi{
 		Config: &ldapConfig,
 		Secret: secret,
 	}
