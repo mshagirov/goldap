@@ -13,27 +13,33 @@ import (
 )
 
 type Model struct {
-	TabNames    []string
-	Tables      []table.Model
-	DN          [][]string
-	ActiveTab   int
-	Searches    map[int]textinput.Model
-	SearchFocus map[int]struct{}
+	TabNames  []string
+	Tables    []table.Model
+	DN        [][]string
+	ActiveTab int
+	Searches  map[int]textinput.Model
 }
 
 func (m Model) Init() tea.Cmd { return nil }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
 	_, insearch := m.Searches[m.ActiveTab]
-	_, searchFocus := m.SearchFocus[m.ActiveTab]
+
+	var searchFocus bool
+	if insearch {
+		searchFocus = m.Searches[m.ActiveTab].Focused()
+	} else {
+		searchFocus = false
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c":
 			if insearch {
 				delete(m.Searches, m.ActiveTab)
-				delete(m.SearchFocus, m.ActiveTab)
 				return m, nil
 			} else {
 				return m, tea.Quit
@@ -41,7 +47,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			if insearch {
 				delete(m.Searches, m.ActiveTab)
-				delete(m.SearchFocus, m.ActiveTab)
 				return m, nil
 			}
 		case "n", "tab":
@@ -57,22 +62,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "/":
 			if !insearch {
 				m.Searches[m.ActiveTab] = initialSearch()
-				m.SearchFocus[m.ActiveTab] = struct{}{}
 				return m, nil
 			} else if !searchFocus && insearch {
-				m.SearchFocus[m.ActiveTab] = struct{}{}
-				return m, nil
+				ti := m.Searches[m.ActiveTab]
+				cmd = ti.Focus()
+				m.Searches[m.ActiveTab] = ti
+				return m, cmd
 			}
 		case "enter":
 			if insearch && searchFocus {
-				delete(m.SearchFocus, m.ActiveTab) // keep search and switch focus to the table
+				ti := m.Searches[m.ActiveTab]
+				ti.Blur()
+				m.Searches[m.ActiveTab] = ti
 				return m, nil
 			} else {
 				// expand entry
+				// search entry disabled
 			}
-			// case "enter", "l" , "left":
-			//   selected info --> m.Tables[m.ActiveTab].SelectedRow() : 1xN slice/array
-			//   return m, tea.Batch(...)
 		}
 	}
 	if insearch && searchFocus {
@@ -196,7 +202,6 @@ func (m Model) View() string {
 func Run(names []string, tables []table.Model, dn [][]string) {
 	m := Model{TabNames: names, Tables: tables, DN: dn}
 	m.Searches = make(map[int]textinput.Model)
-	m.SearchFocus = make(map[int]struct{})
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
