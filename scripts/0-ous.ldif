@@ -31,9 +31,9 @@ ou: Sales
 dn: cn=Managers,ou=Group,dc=goldap,dc=sh
 changetype: add
 cn: Managers
-objectClass: top
-objectClass: posixGroup
 description: POSIX group for managers
+objectClass: posixGroup
+objectClass: top
 gidNumber: 100
 memberUid: asimov
 memberUid: hseldon
@@ -45,18 +45,17 @@ memberUid: aburgers
 dn: cn=Users,ou=Group,dc=goldap,dc=sh
 changetype: add
 cn: Users
-objectClass: top
-objectClass: posixGroup
 description: Users posix group
+objectClass: posixGroup
+objectClass: top
 gidNumber: 1000
 memberUid: asimov
 memberUid: hseldon
 memberUid: rdolivaw
 memberUid: jmkane
 memberUid: jbourne
-memberUid: ebaley 
+memberUid: ebaley
 memberUid: aburgers
 memberUid: rgreventlov
 memberUid: gpowell
 memberUid: mdonovan
-

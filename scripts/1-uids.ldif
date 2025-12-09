@@ -79,7 +79,7 @@ gidNumber: 1000
 homeDirectory: /home/jbourne
 uid: jbourne
 
-dn: uid=ebaley,ou=Devs,ou=People,dc=goldap,dc=sh
+dn: uid=gbaley,ou=Devs,ou=People,dc=goldap,dc=sh
 changetype: add
 objectClass: posixAccount
 objectClass: inetOrgPerson
@@ -106,7 +106,7 @@ description: Allison Burgers. Allison is a
   member of the sales team. Part-time manager.
 givenName: Allison
 sn: Burgers
-mail: agurgers@goldap.sh
+mail: aburgers@goldap.sh
 uidNumber: 1005
 gidNumber: 1000
 homeDirectory: /home/aburgers
