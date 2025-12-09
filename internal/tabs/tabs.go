@@ -63,7 +63,7 @@ func (m Model) Init() tea.Cmd { return nil }
 func (m Model) CurrentRowId() int {
 	rowId, err := strconv.Atoi(m.ActiveTable.SelectedRow()[0])
 	if err != nil {
-		return 0
+		return 1
 	}
 	return rowId
 }
@@ -78,19 +78,33 @@ func (m Model) CurrentDN() string {
 
 func (m *Model) nextTab() (tea.Model, tea.Cmd) {
 	m.ActiveRows[m.ActiveTab] = m.ActiveTable.Cursor()
+
 	// next tab
 	m.ActiveTab = (m.ActiveTab + 1) % len(m.TabNames)
-	m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
+	if _, ok := m.Searches[m.ActiveTab]; ok {
+		m.ActiveTable = newTableWithFilter(m.Contents[m.ActiveTab],
+			m.Searches[m.ActiveTab].Value())
+	} else {
+		m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
+	}
 	m.ActiveTable.SetCursor(m.ActiveRows[m.ActiveTab])
+
 	return m, nil
 }
 
 func (m *Model) prevTab() (tea.Model, tea.Cmd) {
 	m.ActiveRows[m.ActiveTab] = m.ActiveTable.Cursor()
+
 	// previous tab
 	m.ActiveTab = (m.ActiveTab - 1 + len(m.TabNames)) % len(m.TabNames)
-	m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
+	if _, ok := m.Searches[m.ActiveTab]; ok {
+		m.ActiveTable = newTableWithFilter(m.Contents[m.ActiveTab],
+			m.Searches[m.ActiveTab].Value())
+	} else {
+		m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
+	}
 	m.ActiveTable.SetCursor(m.ActiveRows[m.ActiveTab])
+
 	return m, nil
 }
 
@@ -125,7 +139,12 @@ func (m *Model) blurSearch() (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) stopSearch() (tea.Model, tea.Cmd) {
+	rowId := m.CurrentRowId()
+
 	delete(m.Searches, m.ActiveTab)
+
+	m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
+	m.ActiveTable.SetCursor(rowId - 1)
 	return m, nil
 }
 
@@ -169,6 +188,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if insearch && searchFocus {
 		m.Searches[m.ActiveTab], cmd = m.Searches[m.ActiveTab].Update(msg)
+		m.ActiveTable = newTableWithFilter(m.Contents[m.ActiveTab], m.Searches[m.ActiveTab].Value())
 		// apply search filter
 	} else {
 		m.ActiveTable, cmd = m.ActiveTable.Update(msg)

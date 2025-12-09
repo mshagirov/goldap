@@ -2,6 +2,7 @@ package tabs
 
 import (
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
@@ -11,7 +12,12 @@ import (
 )
 
 func NewTable(ti ldapapi.TableInfo) table.Model {
+	if len(ti.Rows) == 0 {
+		ti.Rows = append(ti.Rows, make([]string, len(ti.Cols)))
+	}
+
 	w, h := GetTableDimensions()
+
 	t := table.New(
 		table.WithColumns(ti.Cols),
 		table.WithRows(ti.Rows),
@@ -21,6 +27,34 @@ func NewTable(ti ldapapi.TableInfo) table.Model {
 		table.WithStyles(GetTableStyle()),
 	)
 	return t
+}
+
+func newTableWithFilter(ti ldapapi.TableInfo, filter string) table.Model {
+	if len(filter) == 0 {
+		return NewTable(ti)
+	}
+	filter = strings.ToLower(filter)
+
+	newRows := []table.Row{}
+
+	var contains bool
+
+	for _, row := range ti.Rows {
+		contains = false
+		for _, col := range row {
+			if strings.Contains(strings.ToLower(col), filter) {
+				contains = true
+			}
+		}
+		if contains {
+			newRows = append(newRows, row)
+		}
+	}
+
+	if len(newRows) > 0 {
+		ti.Rows = newRows
+	}
+	return NewTable(ti)
 }
 
 func GetTableStyle() table.Styles {
