@@ -1,40 +1,68 @@
-# test POSIX user 1
-dn: uid=aburgers,ou=Devs,ou=People,dc=goldap,dc=sh
+dn: uid=asimov,ou=People,dc=goldap,dc=sh
 changetype: add
 objectClass: posixAccount
 objectClass: inetOrgPerson
 objectClass: top
 employeeType: Full-time
-cn: Allison Burgers
-description: Allison Burgers. Allison is the project
-  manager of the Dev team.
-givenName: Allison
-sn: Burgers
-mail: agurgers@goldap.sh
+cn: Isaac Asimov
+description: Chief executive officer and founder.
+givenName: Isaac
+sn: Asimov
+mail: asimov@goldap.sh
 uidNumber: 100
 gidNumber: 100
-homeDirectory: /home/aburgers
-uid: aburgers
+homeDirectory: /home/asimov
+uid: asimov
 
-# test POSIX user 2
-dn: uid=jsmith1,ou=Devs,ou=People,dc=goldap,dc=sh
+dn: uid=hseldon,ou=Robotics,ou=People,dc=goldap,dc=sh
 changetype: add
 objectClass: posixAccount
 objectClass: inetOrgPerson
 objectClass: top
 employeeType: Full-time
-cn: John Smith
-description: John Smith from Dev. John is a software
-  developer.
-givenName: John
-sn: Smith
-mail: jsmith1@goldap.sh
+cn: Hari Seldon
+description: Hari from Sales. Manager for
+   robotics team.
+givenName: Hari
+sn: Seldon
+mail: hseldon@goldap.sh
 uidNumber: 1000
-gidNumber: 1000
-homeDirectory: /home/jsmith1
-uid: jsmith1
+gidNumber: 100
+homeDirectory: /home/hseldon
+uid: hseldon
 
-# test POSIX user 3
+dn: uid=rdolivaw,ou=Robotics,ou=People,dc=goldap,dc=sh
+changetype: add
+objectClass: posixAccount
+objectClass: inetOrgPerson
+objectClass: top
+employeeType: Full-time
+cn: R. Daneel Olivaw
+description: R stands for robot. Manager for robotics team.
+givenName: Daneel
+mail: rdolivaw@goldap.sh
+sn: Olivaw
+uidNumber: 1001
+gidNumber: 100
+homeDirectory: /home/rdolivaw
+uid: rdolivaw
+
+dn: uid=jmkane,ou=Sales,ou=People,dc=goldap,dc=sh
+changetype: add
+objectClass: posixAccount
+objectClass: inetOrgPerson
+objectClass: top
+employeeType: Full-time
+cn: John Michael Kane
+description: John is ex-yacht salesman. Part-time manager.
+givenName: John Michael
+mail: jmkane@goldap.sh
+sn: Kane
+uidNumber: 1002
+gidNumber: 1000
+homeDirectory: /home/jmkane
+uid: jmkane
+
 dn: uid=jbourne,ou=Devs,ou=People,dc=goldap,dc=sh
 changetype: add
 objectClass: posixAccount
@@ -46,25 +74,89 @@ description: Jason Bourne is a security consultant for the Dev team.
 givenName: Jason
 mail: jbourne@goldap.sh
 sn: Bourne
-uidNumber: 1001
+uidNumber: 1003
 gidNumber: 1000
 homeDirectory: /home/jbourne
 uid: jbourne
 
-# test POSIX user 4
-dn: uid=jmkane,ou=Devs,ou=People,dc=goldap,dc=sh
+dn: uid=ebaley,ou=Devs,ou=People,dc=goldap,dc=sh
 changetype: add
 objectClass: posixAccount
 objectClass: inetOrgPerson
 objectClass: top
 employeeType: Full-time
-cn: John Michael Kane
-description: John is ex-yacht salesman. Jason's cousin.
-givenName: John Michael
-mail: jmkane@goldap.sh
-sn: Kane
-uidNumber: 1002
-gidNumber: 100
-homeDirectory: /home/jmkane
-uid: jmkane
+cn: Elijah Baley
+description: Cybersecurity expert.
+givenName: Elijah
+mail: ebaley@goldap.sh
+sn: Baley
+uidNumber: 1004
+gidNumber: 1000
+homeDirectory: /home/ebaley
+uid: ebaley
+
+dn: uid=aburgers,ou=Sales,ou=People,dc=goldap,dc=sh
+changetype: add
+objectClass: posixAccount
+objectClass: inetOrgPerson
+objectClass: top
+employeeType: Full-time
+cn: Allison Burgers
+description: Allison Burgers. Allison is a
+  member of the sales team. Part-time manager.
+givenName: Allison
+sn: Burgers
+mail: agurgers@goldap.sh
+uidNumber: 1005
+gidNumber: 1000
+homeDirectory: /home/aburgers
+uid: aburgers
+
+dn: uid=rgreventlov,ou=Robotics,ou=People,dc=goldap,dc=sh
+changetype: add
+objectClass: posixAccount
+objectClass: inetOrgPerson
+objectClass: top
+employeeType: Full-time
+cn: R. Giskard Reventlov
+description: R stands for robot.
+givenName: Giskard
+mail: rgreventlov@goldap.sh
+sn: Reventlov
+uidNumber: 1006
+gidNumber: 1000
+homeDirectory: /home/rgreventlov
+uid: rgreventlov
+
+dn: uid=gpowell,ou=Robotics,ou=People,dc=goldap,dc=sh
+changetype: add
+objectClass: posixAccount
+objectClass: inetOrgPerson
+objectClass: top
+employeeType: Full-time
+cn: Gregory Powell
+description: Practical robotics engineer.
+givenName: Gregory
+mail: gpowell@goldap.sh
+sn: Powell
+uidNumber: 1007
+gidNumber: 1000
+homeDirectory: /home/gpowell
+uid: gpowell
+
+dn: uid=mdonovan,ou=Robotics,ou=People,dc=goldap,dc=sh
+changetype: add
+objectClass: posixAccount
+objectClass: inetOrgPerson
+objectClass: top
+employeeType: Full-time
+cn: Mike Donovan
+description: Practical robotics engineer.
+givenName: Mike
+mail: mdonovan@goldap.sh
+sn: Donovan
+uidNumber: 1008
+gidNumber: 1000
+homeDirectory: /home/mdonovan
+uid: mdonovan
 

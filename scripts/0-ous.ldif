@@ -15,6 +15,18 @@ objectClass: organizationalUnit
 description: All developers
 ou: Devs
 
+dn: ou=Robotics,ou=People,dc=goldap,dc=sh
+objectClass: top
+objectClass: organizationalUnit
+description: All roboticists
+ou: Robotics
+
+dn: ou=Sales,ou=People,dc=goldap,dc=sh
+objectClass: top
+objectClass: organizationalUnit
+description: All sales people
+ou: Sales
+
 # test POSIX Group 1
 dn: cn=Managers,ou=Group,dc=goldap,dc=sh
 changetype: add
@@ -23,8 +35,11 @@ objectClass: top
 objectClass: posixGroup
 description: POSIX group for managers
 gidNumber: 100
-memberUid: aburgers
+memberUid: asimov
+memberUid: hseldon
+memberUid: rdolivaw
 memberUid: jmkane
+memberUid: aburgers
 
 # test POSIX Group 2
 dn: cn=Users,ou=Group,dc=goldap,dc=sh
@@ -34,6 +49,14 @@ objectClass: top
 objectClass: posixGroup
 description: Users posix group
 gidNumber: 1000
-memberUid: jsmith1
-memberUid: jbourne 
+memberUid: asimov
+memberUid: hseldon
+memberUid: rdolivaw
+memberUid: jmkane
+memberUid: jbourne
+memberUid: ebaley 
+memberUid: aburgers
+memberUid: rgreventlov
+memberUid: gpowell
+memberUid: mdonovan
 
