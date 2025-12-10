@@ -14,7 +14,7 @@ var (
 		"cn":        "Name",
 		"gidNumber": "Group",
 	}
-	UsrColsWidth = []int{15, 5, 15, 25}
+	UsrColsWidth = []int{15, 5, 20, 25}
 
 	GrpCols = []string{"Name", "gid", "Members", "Description"}
 	GrpAttr = map[string]string{
@@ -23,7 +23,7 @@ var (
 		"memberUid":   "Members",
 		"description": "Description",
 	}
-	GrpColsWidth = []int{15, 5, 25, 25}
+	GrpColsWidth = []int{15, 5, 30, 30}
 
 	OUCols = []string{"Name", "dn", "Description"}
 	OUAttr = map[string]string{
