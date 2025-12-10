@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
-func initialSearch() textinput.Model {
+func initSearch() textinput.Model {
 	ti := textinput.New()
 	ti.Prompt = "/"
 	ti.Placeholder = "search"

@@ -122,7 +122,7 @@ func (m Model) getSearchState() (bool, bool) {
 
 func (m *Model) startSearch(insearch bool) (tea.Model, tea.Cmd) {
 	if !insearch {
-		m.Searches[m.ActiveTab] = initialSearch()
+		m.Searches[m.ActiveTab] = initSearch()
 		return m, nil
 	}
 	ti := m.Searches[m.ActiveTab]
@@ -237,14 +237,14 @@ func (m Model) View() string {
 	m.ActiveTable.SetWidth(w)
 	m.ActiveTable.SetHeight(h)
 
-	dn := m.CurrentDN()
-
 	var searchField string
 	if s, ok := m.Searches[m.ActiveTab]; ok {
 		searchField = searchBarStyle.Render(fmt.Sprintf("%v", s.View()))
 	}
 
-	dnInfo := infoBarStyle.Width(w - lipgloss.Width(searchField)).Render(fmt.Sprintf("%v", dn))
+	dnInfo := infoBarStyle.
+		Width(w - lipgloss.Width(searchField)).
+		Render(fmt.Sprintf("%v", m.CurrentDN()))
 	infoBar := lipgloss.JoinHorizontal(lipgloss.Top, searchField, dnInfo)
 
 	doc.WriteString(row)
