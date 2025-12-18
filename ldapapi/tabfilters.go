@@ -7,6 +7,8 @@ const (
 )
 
 var (
+	UserFilterTemplate = "(&" + UserFilter + "(%s))"
+
 	UsrCols = []string{"Username", "uid", "Name", "Group"}
 	UsrAttr = map[string]string{
 		"uid":       "Username",

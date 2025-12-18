@@ -52,6 +52,10 @@ func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
 	return api.Search(UserFilter)
 }
 
+func (api *LdapApi) FindUser(dn string) (*ldap.SearchResult, error) {
+	return api.Search(fmt.Sprintf(UserFilterTemplate, dn))
+}
+
 func (api *LdapApi) ListGroups() (*ldap.SearchResult, error) {
 	return api.Search(GroupFilter)
 }

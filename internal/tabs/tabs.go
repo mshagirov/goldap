@@ -56,6 +56,7 @@ type Model struct {
 	ActiveRows  []int
 	ActiveTab   int
 	Searches    map[int]textinput.Model
+	LdapApi     *ldapapi.LdapApi
 }
 
 func (m Model) Init() tea.Cmd { return nil }
@@ -255,12 +256,13 @@ func (m Model) View() string {
 	return docStyle.Width(termWidth).Height(h).Render(doc.String())
 }
 
-func Run(names []string, contents []ldapapi.TableInfo, dn [][]string) {
+func Run(names []string, contents []ldapapi.TableInfo, dn [][]string, api *ldapapi.LdapApi) {
 	m := Model{TabNames: names, Contents: contents, DN: dn}
 
 	m.Searches = make(map[int]textinput.Model, len(names))
 	m.ActiveTable = NewTable(contents[0])
 	m.ActiveRows = make([]int, len(names))
+	m.LdapApi = api
 
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)

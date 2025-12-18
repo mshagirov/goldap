@@ -44,5 +44,5 @@ func main() {
 		dn = append(dn, t.DN)
 	}
 
-	tabs.Run(tabnames, contents, dn)
+	tabs.Run(tabnames, contents, dn, &ldap)
 }

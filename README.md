@@ -1,50 +1,32 @@
-# goldap : go LDAP application
+# goldap
 
-> LDAP TUI in go
+> A TUI application for managing LDAP POSIX users and groups written in Go
 
-## TUI
+## Installation
 
-```
-Ldap info config etc.
+### Requirements
 
-[tab_i]:tab/shift+tab{
+If not yet installed, install Go from [webinstall.dev](https://webinstall.dev/golang/)
+with
 
-[table]:j/k/up/down{
-content
-}
-}
-
-tab_i \in {user, group, ou}
-
+```bash
+curl -sS https://webi.sh/golang | sh; \
+source ~/.config/envman/PATH.env
 ```
 
-## LDAP
+Alternatively, install Go from [go.dev](https://go.dev/doc/install). Go is only
+used during the installation process and not required after building `goldap`.
 
-- [LDAP tutorial](https://www.zytrax.com/books/ldap/)
-- [LDAP in Go](https://cybernetist.com/2020/05/18/getting-started-with-go-ldap/)
-- go-ldap:
-  - [repo](https://github.com/go-ldap/ldap)
-  - [Docs](https://pkg.go.dev/github.com/go-ldap/ldap)
+### Installing `goldap`
 
-## SQLite DB Notes
+Use Go to install `goldap`.
 
-> Not needed yet
+```bash
+go install github.com/mshagirov/goldap@latest
+```
 
-### Turso SQL DB
-
-- [Quickstart guide](https://docs.turso.tech/tursodb/quickstart)
-- Installation:
+## Usage
 
 ```sh
-curl --proto '=https' \
---tlsv1.2 -LsSf \
-https://github.com/tursodatabase/turso/releases/latest/download/turso_cli-installer.sh | sh
-```
-
-### goose
-
-- [goose documentation](https://pressly.github.io/goose/documentation/annotations/)
-
-```sh
-go install github.com/pressly/goose/v3/cmd/goose@latest
+Navigation commands and keybindings
 ```
