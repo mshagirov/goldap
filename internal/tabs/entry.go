@@ -52,6 +52,8 @@ func initialEntryModel(entries, names []string) entryModel {
 }
 
 func runEntryModel(filter string, api *ldapapi.LdapApi) {
+	sr, err := api.Search(filter)
+
 	m := initialEntryModel(entries, names)
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Printf("could not start program: %s", err)
