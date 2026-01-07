@@ -29,12 +29,11 @@ func main() {
 	}
 
 	var (
-		tabnames = []string{"Users", "Groups", "OrgUnits"}
 		contents []ldapapi.TableInfo
 		dn       [][]string
 	)
 
-	for _, tabName := range tabnames {
+	for _, tabName := range ldapapi.TableNames {
 		t, err := ldap.GetTableInfo(tabName)
 		if err != nil {
 			fmt.Println(err)
@@ -44,5 +43,5 @@ func main() {
 		dn = append(dn, t.DN)
 	}
 
-	tabs.Run(tabnames, contents, dn, &ldap)
+	tabs.Run(ldapapi.TableNames, contents, dn, &ldap)
 }

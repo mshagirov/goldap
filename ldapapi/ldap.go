@@ -2,6 +2,7 @@ package ldapapi
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/mshagirov/goldap/internal/config"
@@ -52,10 +53,6 @@ func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
 	return api.Search(UserFilter)
 }
 
-func (api *LdapApi) FindUser(dn string) (*ldap.SearchResult, error) {
-	return api.Search(fmt.Sprintf(UserFilterTemplate, dn))
-}
-
 func (api *LdapApi) ListGroups() (*ldap.SearchResult, error) {
 	return api.Search(GroupFilter)
 }
@@ -64,15 +61,14 @@ func (api *LdapApi) ListOUs() (*ldap.SearchResult, error) {
 	return api.Search(OUsFilter)
 }
 
-func (api *LdapApi) GetTableInfo(s string) (TableInfo, error) {
+func (api *LdapApi) GetTableInfo(tableName string) (TableInfo, error) {
 	var t TableInfo
-	switch s {
+	switch tableName {
 	case "Users":
 		usrRes, err := api.ListUsers()
 		if err != nil {
 			return t, err
 		}
-
 		LoadTableInfoFromSearchResults(&t, UsrCols, UsrAttr, UsrColsWidth, usrRes)
 		return t, nil
 	case "Groups":
@@ -80,7 +76,6 @@ func (api *LdapApi) GetTableInfo(s string) (TableInfo, error) {
 		if err != nil {
 			return t, err
 		}
-
 		LoadTableInfoFromSearchResults(&t, GrpCols, GrpAttr, GrpColsWidth, grpRes)
 		return t, nil
 	case "OrgUnits":
@@ -88,10 +83,39 @@ func (api *LdapApi) GetTableInfo(s string) (TableInfo, error) {
 		if err != nil {
 			return t, err
 		}
-
 		LoadTableInfoFromSearchResults(&t, OUCols, OUAttr, OUColsWidth, ouRes)
 		return t, nil
 	default:
-		return t, fmt.Errorf("LdapApi.GetTableInfo: the input '%v' value not recognised", s)
+		return t, fmt.Errorf("LdapApi.GetTableInfo: the input '%v' value not recognised", tableName)
 	}
+}
+
+func (api *LdapApi) SearchDN(dn, tableName string) (*ldap.SearchResult, error) {
+	filter := FormatDNFilter(dn, tableName)
+	if len(filter) == 0 {
+		return nil, fmt.Errorf("Error formatting: %s", dn)
+	}
+	return api.Search(filter)
+}
+
+func (api *LdapApi) GetAttrWithDN(dn, tableName string) ([]string, []string) {
+	var (
+		attrNames []string
+		attrVals  []string
+	)
+	sr, err := api.SearchDN(dn, tableName)
+	if err != nil || len(sr.Entries) == 0 {
+		return attrNames, attrVals
+	}
+	e := sr.Entries[0]
+	for _, a := range e.Attributes {
+		attrNames = append(attrNames, a.Name)
+		if len(a.Values) > 1 {
+			attrVals = append(attrVals, strings.Join(a.Values, ", "))
+		} else {
+			attrVals = append(attrVals, a.Values[0])
+		}
+	}
+
+	return attrNames, attrVals
 }

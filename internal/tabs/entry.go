@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/go-ldap/ldap/v3"
+	// "github.com/go-ldap/ldap/v3"
 	"github.com/mshagirov/goldap/ldapapi"
 )
 
@@ -34,29 +34,31 @@ var (
 )
 
 type entryModel struct {
-	entries  []string
-	names    []string
-	selected int
+	title     string
+	attrNames []string
+	attrVals  []string
+	selected  int
 }
 
 func (m entryModel) Init() tea.Cmd {
 	return nil
 }
 
-func initialEntryModel(entries, names []string) entryModel {
+func initialEntryModel(title string, attrNames, attrVals []string) entryModel {
 	m := entryModel{
-		entries: entries,
-		names:   names,
+		title:     title,
+		attrNames: attrNames,
+		attrVals:  attrVals,
 	}
 	return m
 }
 
-func runEntryModel(filter string, api *ldapapi.LdapApi) {
-	sr, err := api.Search(filter)
-
-	m := initialEntryModel(entries, names)
-	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
-		fmt.Printf("could not start program: %s", err)
-		return
-	}
+func runEntryModel(dn, tableName string, api *ldapapi.LdapApi) {
+	attrNames, attrVals := api.GetAttrWithDN(dn, tableName)
+	m := initialEntryModel(dn, attrNames, attrVals)
+	fmt.Println(m)
+	// if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+	// 	fmt.Printf("could not start program: %s\n", err)
+	// 	return
+	// }
 }

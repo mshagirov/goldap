@@ -175,7 +175,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !insearch || !searchFocus || msg.String() != "p" {
 				return m.prevTab()
 			}
-		case "/":
+		case "/", "?":
 			if !insearch || !searchFocus {
 				return m.startSearch(insearch)
 			}
@@ -184,6 +184,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.blurSearch()
 			} else {
 				// expand entry
+				runEntryModel(m.CurrentDN(), m.TabNames[m.ActiveTab], m.LdapApi)
+				return m, nil
 			}
 		}
 	}
