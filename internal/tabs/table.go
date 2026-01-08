@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 
 	"github.com/mshagirov/goldap/ldapapi"
@@ -60,9 +59,8 @@ func newTableWithFilter(ti ldapapi.TableInfo, filter string) table.Model {
 
 func GetTableStyle() table.Styles {
 	s := table.DefaultStyles()
-	hlColor := lipgloss.AdaptiveColor{Light: "#0014a8", Dark: "#265ef7"}
-	s.Header = s.Header.Foreground(hlColor)
-	s.Selected = s.Selected.Foreground(lipgloss.AdaptiveColor{Light: "#000000", Dark: "#ffffff"}).Background(hlColor)
+	s.Header = s.Header.Foreground(tableHighlightColor)
+	s.Selected = s.Selected.Foreground(tableForegroundColor).Background(tableHighlightColor)
 	return s
 }
 

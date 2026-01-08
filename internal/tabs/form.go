@@ -1,0 +1,122 @@
+package tabs
+
+import (
+	"log"
+	"strings"
+
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/mshagirov/goldap/ldapapi"
+)
+
+func runForm(dn, tableName string, api *ldapapi.LdapApi) {
+	attrNames, attrVals := api.GetAttrWithDN(dn, tableName)
+	p := tea.NewProgram(initialFormModel(dn, attrVals, attrNames), tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+type (
+	errMsg error
+)
+
+type formModel struct {
+	title      string
+	inputs     []textinput.Model
+	inputNames []string
+	index      int
+	updated    map[int]struct{}
+	err        error
+}
+
+func initialFormModel(title string, attrValues, attrNames []string) formModel {
+	var inputs []textinput.Model = make([]textinput.Model, len(attrNames))
+	var inputNames []string = make([]string, len(attrNames))
+	for i := range attrNames {
+		inputs[i] = textinput.New()
+		inputs[i].Placeholder = attrValues[i]
+		inputs[i].CharLimit = 45
+		inputs[i].Width = 40
+		inputs[i].Prompt = ""
+		// inputs[i].SetValue(attrValues[i])
+		inputNames[i] = attrNames[i]
+	}
+
+	inputs[0].Focus()
+
+	return formModel{
+		title:      title,
+		inputs:     inputs,
+		inputNames: inputNames,
+		index:      0,
+		updated:    make(map[int]struct{}),
+		err:        nil,
+	}
+}
+
+func (m formModel) Init() tea.Cmd {
+	return textinput.Blink
+}
+
+func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd = make([]tea.Cmd, len(m.inputs))
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch keypress := msg.String(); keypress {
+		case "enter":
+			return m, nil
+		case "ctrl+c", "esc":
+			return m, tea.Quit
+		case "up", "shift+tab":
+			m.prevInput()
+		case "down", "tab":
+			m.nextInput()
+		}
+		for i := range m.inputs {
+			m.inputs[i].Blur()
+		}
+		m.inputs[m.index].Focus()
+
+	// We handle errors just like any other message
+	case errMsg:
+		m.err = msg
+		return m, nil
+	}
+
+	for i := range m.inputs {
+		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func (m formModel) View() string {
+	doc := strings.Builder{}
+	doc.WriteString(" " + m.title + " ")
+	doc.WriteString("\n")
+
+	for i, val := range m.inputs {
+		doc.WriteString(inputStyle.Width(30).Render(m.inputNames[i]))
+		doc.WriteString("\n")
+		doc.WriteString(val.View())
+		doc.WriteString("\n")
+	}
+
+	return doc.String()
+}
+
+// nextInput focuses the next input field
+func (m *formModel) nextInput() {
+	m.index = (m.index + 1) % len(m.inputs)
+}
+
+// prevInput focuses the previous input field
+func (m *formModel) prevInput() {
+	m.index--
+	// Wrap around
+	if m.index < 0 {
+		m.index = len(m.inputs) - 1
+	}
+}
