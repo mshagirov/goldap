@@ -29,19 +29,48 @@ func main() {
 	}
 
 	var (
-		contents []ldapapi.TableInfo
-		dn       [][]string
+		contents   []ldapapi.TableInfo
+		dn         [][]string
+		reloaded   = false
+		tableIndex = 0
+		rowIndices []int
 	)
 
-	for _, tabName := range ldapapi.TableNames {
-		t, err := ldap.GetTableInfo(tabName)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+	for true {
+		for _, tabName := range ldapapi.TableNames {
+			t, err := ldap.GetTableInfo(tabName)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			contents = append(contents, t)
+			dn = append(dn, t.DN)
 		}
-		contents = append(contents, t)
-		dn = append(dn, t.DN)
-	}
 
-	tabs.Run(ldapapi.TableNames, contents, dn, &ldap)
+		m := tabs.NewTabsModel(ldapapi.TableNames, contents, dn, &ldap)
+
+		if reloaded {
+			m.ActiveTab = tableIndex
+			m.ActiveTable = tabs.NewTable(contents[tableIndex])
+			m.ActiveRows = rowIndices
+			for i, rowId := range rowIndices {
+				m.ActiveRows[i] = min(len(dn[i]), rowId)
+			}
+			reloaded = false
+		}
+
+		fi, quit := tabs.RunTabs(m)
+
+		if !quit {
+			fi.Api = &ldap
+
+			rowIndices = fi.RowIndices
+			tableIndex = fi.TableIndex
+
+			tabs.RunForm(fi)
+			reloaded = true
+		} else {
+			break
+		}
+	}
 }

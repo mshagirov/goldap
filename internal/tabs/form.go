@@ -10,9 +10,18 @@ import (
 	"github.com/mshagirov/goldap/ldapapi"
 )
 
-func runForm(dn, tableName string, api *ldapapi.LdapApi) {
-	attrNames, attrVals := api.GetAttrWithDN(dn, tableName)
-	p := tea.NewProgram(initialFormModel(dn, attrVals, attrNames), tea.WithAltScreen())
+type FormInfo struct {
+	DN         string
+	TableName  string
+	TableIndex int
+	RowIndices []int
+	Api        *ldapapi.LdapApi
+}
+
+func RunForm(fi FormInfo) {
+	//func runForm(dn, tableName string, api *ldapapi.LdapApi) {
+	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
+	p := tea.NewProgram(initialFormModel(fi.DN, attrVals, attrNames), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -28,6 +37,7 @@ type formModel struct {
 	inputNames []string
 	index      int
 	updated    map[int]struct{}
+	active     map[int]struct{}
 	err        error
 }
 
@@ -51,6 +61,7 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 		inputs:     inputs,
 		inputNames: inputNames,
 		index:      0,
+		active:     make(map[int]struct{}),
 		updated:    make(map[int]struct{}),
 		err:        nil,
 	}
@@ -67,14 +78,20 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
+			m.active[m.index] = struct{}{}
 			return m, nil
 		case "ctrl+c", "esc":
+			if _, ok := m.active[m.index]; ok {
+				delete(m.active, m.index)
+				return m, nil
+			}
 			return m, tea.Quit
 		case "up", "shift+tab":
 			m.prevInput()
 		case "down", "tab":
 			m.nextInput()
 		}
+
 		for i := range m.inputs {
 			m.inputs[i].Blur()
 		}
@@ -86,9 +103,10 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+	if _, ok := m.active[m.index]; ok {
+		m.inputs[m.index], cmds[m.index] = m.inputs[m.index].Update(msg)
 	}
+
 	return m, tea.Batch(cmds...)
 }
 

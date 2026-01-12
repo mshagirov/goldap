@@ -32,6 +32,8 @@ type Model struct {
 	ActiveTab   int
 	Searches    map[int]textinput.Model
 	LdapApi     *ldapapi.LdapApi
+	FormInfo    *FormInfo
+	quit        *bool
 }
 
 func (m Model) Init() tea.Cmd { return nil }
@@ -63,7 +65,7 @@ func (m *Model) nextTab() (tea.Model, tea.Cmd) {
 	} else {
 		m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
 	}
-	m.ActiveTable.SetCursor(m.ActiveRows[m.ActiveTab])
+	m.SetCursor()
 
 	return m, nil
 }
@@ -79,9 +81,21 @@ func (m *Model) prevTab() (tea.Model, tea.Cmd) {
 	} else {
 		m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
 	}
-	m.ActiveTable.SetCursor(m.ActiveRows[m.ActiveTab])
-
+	m.SetCursor()
 	return m, nil
+}
+
+func (m *Model) SetCursor() {
+	m.ActiveTable.SetCursor(m.ActiveRows[m.ActiveTab])
+}
+
+func (m *Model) setFormInfo() {
+	*m.FormInfo = FormInfo{
+		DN:         m.CurrentDN(),
+		TableName:  m.TabNames[m.ActiveTab],
+		TableIndex: m.ActiveTab,
+		RowIndices: m.ActiveRows}
+	*m.quit = false
 }
 
 func (m Model) getSearchState() (bool, bool) {
@@ -120,7 +134,8 @@ func (m *Model) stopSearch() (tea.Model, tea.Cmd) {
 	delete(m.Searches, m.ActiveTab)
 
 	m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
-	m.ActiveTable.SetCursor(rowId - 1)
+	m.ActiveRows[m.ActiveTab] = rowId - 1
+	m.SetCursor()
 	return m, nil
 }
 
@@ -158,9 +173,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if insearch && searchFocus {
 				return m.blurSearch()
 			} else {
-				// expand entry
-				runForm(m.CurrentDN(), m.TabNames[m.ActiveTab], m.LdapApi)
-				return m, nil
+				m.setFormInfo()
+				return m, tea.Quit
 			}
 		}
 	}
@@ -233,16 +247,23 @@ func (m Model) View() string {
 	return docStyle.Width(termWidth).Height(h).Render(doc.String())
 }
 
-func Run(names []string, contents []ldapapi.TableInfo, dn [][]string, api *ldapapi.LdapApi) {
+func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, api *ldapapi.LdapApi) Model {
 	m := Model{TabNames: names, Contents: contents, DN: dn}
-
 	m.Searches = make(map[int]textinput.Model, len(names))
 	m.ActiveTable = NewTable(contents[0])
 	m.ActiveRows = make([]int, len(names))
 	m.LdapApi = api
+	quit := true
+	m.quit = &quit
+	m.FormInfo = &FormInfo{}
 
+	return m
+}
+
+func RunTabs(m Model) (FormInfo, bool) {
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
+	return *m.FormInfo, *m.quit
 }
