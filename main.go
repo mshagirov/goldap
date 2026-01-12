@@ -56,6 +56,8 @@ func main() {
 			for i, rowId := range rowIndices {
 				m.ActiveRows[i] = min(len(dn[i]), rowId)
 			}
+			m.SetCursor()
+
 			reloaded = false
 		}
 
