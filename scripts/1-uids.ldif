@@ -13,6 +13,7 @@ uidNumber: 100
 gidNumber: 100
 homeDirectory: /home/asimov
 uid: asimov
+userPassword: {SSHA}ydHEsLSxEfGSlvYf5vWEbz+Eh3jcD9R+
 
 dn: uid=hseldon,ou=Robotics,ou=People,dc=goldap,dc=sh
 changetype: add

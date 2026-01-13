@@ -50,8 +50,13 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 		inputs[i].CharLimit = 45
 		inputs[i].Width = 40
 		inputs[i].Prompt = ""
-		// inputs[i].SetValue(attrValues[i])
 		inputNames[i] = attrNames[i]
+		if strings.Contains(strings.ToLower(attrNames[i]), "password") {
+			inputs[i].EchoMode = textinput.EchoPassword
+			inputs[i].EchoCharacter = '•'
+			inputs[i].Placeholder = "••••••••"
+		}
+
 	}
 
 	inputs[0].Focus()
