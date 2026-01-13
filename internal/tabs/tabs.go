@@ -183,6 +183,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ActiveTable = newTableWithFilter(m.Contents[m.ActiveTab], m.Searches[m.ActiveTab].Value())
 	} else {
 		m.ActiveTable, cmd = m.ActiveTable.Update(msg)
+		m.ActiveRows[m.ActiveTab] = m.ActiveTable.Cursor()
 	}
 	return m, cmd
 }

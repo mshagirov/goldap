@@ -10,6 +10,20 @@ import (
 	"github.com/mshagirov/goldap/ldapapi"
 )
 
+type (
+	errMsg error
+)
+
+type formModel struct {
+	title      string
+	inputs     []textinput.Model
+	inputNames []string
+	index      int
+	updated    map[int]struct{}
+	active     map[int]struct{}
+	err        error
+}
+
 type FormInfo struct {
 	DN         string
 	TableName  string
@@ -25,20 +39,6 @@ func RunForm(fi FormInfo) {
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-type (
-	errMsg error
-)
-
-type formModel struct {
-	title      string
-	inputs     []textinput.Model
-	inputNames []string
-	index      int
-	updated    map[int]struct{}
-	active     map[int]struct{}
-	err        error
 }
 
 func initialFormModel(title string, attrValues, attrNames []string) formModel {
@@ -68,7 +68,7 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 }
 
 func (m formModel) Init() tea.Cmd {
-	return textinput.Blink
+	return nil
 }
 
 func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -79,7 +79,7 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			m.active[m.index] = struct{}{}
-			return m, nil
+			return m, textinput.Blink
 		case "ctrl+c", "esc":
 			if _, ok := m.active[m.index]; ok {
 				delete(m.active, m.index)
@@ -112,13 +112,17 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m formModel) View() string {
 	doc := strings.Builder{}
-	doc.WriteString(" " + m.title + " ")
+	doc.WriteString(formTitleStyle.Render(m.title))
 	doc.WriteString("\n")
 
 	for i, val := range m.inputs {
-		doc.WriteString(inputStyle.Width(30).Render(m.inputNames[i]))
+		doc.WriteString(formFieldNameStyle.Width(30).Render(m.inputNames[i]))
 		doc.WriteString("\n")
-		doc.WriteString(val.View())
+		if _, ok := m.active[i]; ok {
+			doc.WriteString(formActiveStyle.Render(val.View()))
+		} else {
+			doc.WriteString(formBlurredStyle.Render(val.View()))
+		}
 		doc.WriteString("\n")
 	}
 
