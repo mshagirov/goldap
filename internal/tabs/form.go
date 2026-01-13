@@ -78,11 +78,15 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
-			m.active[m.index] = struct{}{}
+			if _, ok := m.active[m.index]; !ok {
+				m.active[m.index] = struct{}{}
+				m.inputs[m.index].SetValue(m.inputs[m.index].Placeholder)
+			}
 			return m, textinput.Blink
 		case "ctrl+c", "esc":
 			if _, ok := m.active[m.index]; ok {
 				delete(m.active, m.index)
+				m.inputs[m.index].SetValue("")
 				return m, nil
 			}
 			return m, tea.Quit
