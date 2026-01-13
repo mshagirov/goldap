@@ -79,14 +79,12 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			if _, ok := m.active[m.index]; !ok {
-				m.active[m.index] = struct{}{}
-				m.inputs[m.index].SetValue(m.inputs[m.index].Placeholder)
+				m.startEditing()
 			}
 			return m, textinput.Blink
 		case "ctrl+c", "esc":
 			if _, ok := m.active[m.index]; ok {
-				delete(m.active, m.index)
-				m.inputs[m.index].SetValue("")
+				m.cancelEditing()
 				return m, nil
 			}
 			return m, tea.Quit
@@ -145,4 +143,14 @@ func (m *formModel) prevInput() {
 	if m.index < 0 {
 		m.index = len(m.inputs) - 1
 	}
+}
+
+func (m *formModel) startEditing() {
+	m.active[m.index] = struct{}{}
+	m.inputs[m.index].SetValue(m.inputs[m.index].Placeholder)
+}
+
+func (m *formModel) cancelEditing() {
+	delete(m.active, m.index)
+	m.inputs[m.index].SetValue("")
 }
