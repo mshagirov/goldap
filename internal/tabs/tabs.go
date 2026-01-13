@@ -36,7 +36,9 @@ type Model struct {
 	quit        *bool
 }
 
-func (m Model) Init() tea.Cmd { return nil }
+func (m Model) Init() tea.Cmd {
+	return tea.SetWindowTitle("goldap")
+}
 
 func (m Model) CurrentRowId() int {
 	rowId, err := strconv.Atoi(m.ActiveTable.SelectedRow()[0])
