@@ -93,6 +93,10 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			return m, tea.Quit
+		case "-":
+			if _, ok := m.active[m.index]; !ok {
+				return m, tea.Quit
+			}
 		case "up", "shift+tab":
 			m.prevInput()
 		case "down", "tab":
@@ -104,7 +108,7 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.inputs[m.index].Focus()
 
-	// We handle errors just like any other message
+	// handle errors just like any other message
 	case errMsg:
 		m.err = msg
 		return m, nil
@@ -126,9 +130,11 @@ func (m formModel) View() string {
 		doc.WriteString(formFieldNameStyle.Width(30).Render(m.inputNames[i]))
 		doc.WriteString("\n")
 		if _, ok := m.active[i]; ok {
-			doc.WriteString(formActiveStyle.Render(val.View()))
+			val.TextStyle = formActiveStyle
+			doc.WriteString(formInputPadding.Render(val.View()))
 		} else {
-			doc.WriteString(formBlurredStyle.Render(val.View()))
+			val.TextStyle = formBlurredStyle
+			doc.WriteString(formInputPadding.Render(val.View()))
 		}
 		doc.WriteString("\n")
 	}
