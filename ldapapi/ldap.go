@@ -9,7 +9,7 @@ import (
 )
 
 type LdapApi struct {
-	Config *config.Config
+	Config config.Config
 	Secret string
 }
 

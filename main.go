@@ -23,22 +23,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	ldap := ldapapi.LdapApi{
-		Config: &ldapConfig,
+	LdapApi := &ldapapi.LdapApi{
+		Config: ldapConfig,
 		Secret: secret,
 	}
 
 	var (
-		contents   []ldapapi.TableInfo
-		dn         [][]string
-		reloaded   = false
-		tableIndex = 0
-		rowIndices []int
+		contents     []ldapapi.TableInfo
+		dn           [][]string
+		reload_model = false
+		tableIndex   = 0
+		rowIndices   []int
 	)
 
 	for true {
 		for _, tabName := range ldapapi.TableNames {
-			t, err := ldap.GetTableInfo(tabName)
+			t, err := LdapApi.GetTableInfo(tabName)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -47,9 +47,9 @@ func main() {
 			dn = append(dn, t.DN)
 		}
 
-		m := tabs.NewTabsModel(ldapapi.TableNames, contents, dn, &ldap)
+		m := tabs.NewTabsModel(ldapapi.TableNames, contents, dn, LdapApi)
 
-		if reloaded {
+		if reload_model {
 			m.ActiveTab = tableIndex
 			m.ActiveTable = tabs.NewTable(contents[tableIndex])
 			m.ActiveRows = rowIndices
@@ -58,19 +58,19 @@ func main() {
 			}
 			m.SetCursor()
 
-			reloaded = false
+			reload_model = false
 		}
 
 		fi, quit := tabs.RunTabs(m)
 
 		if !quit {
-			fi.Api = &ldap
+			fi.Api = LdapApi
 
 			rowIndices = fi.RowIndices
 			tableIndex = fi.TableIndex
 
 			tabs.RunForm(fi)
-			reloaded = true
+			reload_model = true
 		} else {
 			break
 		}
