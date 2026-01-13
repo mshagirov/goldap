@@ -65,7 +65,7 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(tea.SetWindowTitle("goldap | login"), textinput.Blink)
+	return tea.Batch(tea.SetWindowTitle("GoLDAP | login"), textinput.Blink)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
