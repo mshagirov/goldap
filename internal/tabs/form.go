@@ -46,7 +46,7 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 	for i := range attrNames {
 		inputs[i] = textinput.New()
 		inputs[i].Placeholder = attrValues[i]
-		inputs[i].CharLimit = 45
+		inputs[i].CharLimit = 80
 		inputs[i].Width = 40
 		inputs[i].Prompt = ""
 		inputNames[i] = attrNames[i]
