@@ -23,17 +23,27 @@ func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
 	return border
 }
 
+type TabState struct {
+	Cursor       int
+	Search       textinput.Model
+	IsFiltered   bool
+	CachedFilter string
+}
+
+type State struct {
+	Table    table.Model
+	TabId    int
+	TabSates []TabState
+	FormInfo FormInfo
+	Quit     bool
+}
+
 type Model struct {
-	TabNames    []string
-	Contents    []ldapapi.TableInfo
-	DN          [][]string
-	ActiveTable table.Model
-	ActiveRows  []int
-	ActiveTab   int
-	Searches    map[int]textinput.Model
-	LdapApi     *ldapapi.LdapApi
-	FormInfo    *FormInfo
-	quit        *bool
+	TabNames []string
+	Contents []ldapapi.TableInfo
+	DN       [][]string
+	State    *State
+	LdapApi  *ldapapi.LdapApi
 }
 
 func (m Model) Init() tea.Cmd {
@@ -41,7 +51,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) CurrentRowId() int {
-	rowId, err := strconv.Atoi(m.ActiveTable.SelectedRow()[0])
+	rowId, err := strconv.Atoi(m.State.Table.SelectedRow()[0])
 	if err != nil {
 		return 1
 	}
@@ -50,94 +60,88 @@ func (m Model) CurrentRowId() int {
 
 func (m Model) CurrentDN() string {
 	rowId := m.CurrentRowId()
-	if (rowId) > len(m.DN[m.ActiveTab]) {
+	if (rowId) > len(m.DN[m.State.TabId]) {
 		return fmt.Sprintf("row %v is out of range", rowId+1)
 	}
-	return m.DN[m.ActiveTab][rowId-1]
+	return m.DN[m.State.TabId][rowId-1]
+}
+
+func (m *Model) SetCursor() {
+	m.State.Table.SetCursor(m.State.TabSates[m.State.TabId].Cursor)
+}
+
+func (m *Model) SetTable() {
+	if m.State.TabSates[m.State.TabId].IsFiltered {
+		m.State.Table = newTableWithFilter(m.Contents[m.State.TabId],
+			m.State.TabSates[m.State.TabId].Search.Value())
+	} else {
+		m.State.Table = NewTable(m.Contents[m.State.TabId])
+	}
+	m.SetCursor()
 }
 
 func (m *Model) nextTab() (tea.Model, tea.Cmd) {
-	m.ActiveRows[m.ActiveTab] = m.ActiveTable.Cursor()
-
+	m.State.TabSates[m.State.TabId].Cursor = m.State.Table.Cursor()
 	// next tab
-	m.ActiveTab = (m.ActiveTab + 1) % len(m.TabNames)
-	if _, ok := m.Searches[m.ActiveTab]; ok {
-		m.ActiveTable = newTableWithFilter(m.Contents[m.ActiveTab],
-			m.Searches[m.ActiveTab].Value())
-	} else {
-		m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
-	}
-	m.SetCursor()
-
+	m.State.TabId = (m.State.TabId + 1) % len(m.TabNames)
+	m.SetTable()
 	return m, nil
 }
 
 func (m *Model) prevTab() (tea.Model, tea.Cmd) {
-	m.ActiveRows[m.ActiveTab] = m.ActiveTable.Cursor()
-
+	m.State.TabSates[m.State.TabId].Cursor = m.State.Table.Cursor()
 	// previous tab
-	m.ActiveTab = (m.ActiveTab - 1 + len(m.TabNames)) % len(m.TabNames)
-	if _, ok := m.Searches[m.ActiveTab]; ok {
-		m.ActiveTable = newTableWithFilter(m.Contents[m.ActiveTab],
-			m.Searches[m.ActiveTab].Value())
-	} else {
-		m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
-	}
-	m.SetCursor()
+	m.State.TabId = (m.State.TabId - 1 + len(m.TabNames)) % len(m.TabNames)
+	m.SetTable()
 	return m, nil
 }
 
-func (m *Model) SetCursor() {
-	m.ActiveTable.SetCursor(m.ActiveRows[m.ActiveTab])
-}
-
-func (m *Model) setFormInfo() {
-	*m.FormInfo = FormInfo{
+func (m *Model) setFormInfo() { // simplify and consolidate state snapshot and reloading
+	m.State.FormInfo = FormInfo{
 		DN:         m.CurrentDN(),
-		TableName:  m.TabNames[m.ActiveTab],
-		TableIndex: m.ActiveTab,
-		RowIndices: m.ActiveRows}
-	*m.quit = false
+		TableName:  m.TabNames[m.State.TabId],
+		TableIndex: m.State.TabId,
+	}
+	m.State.Quit = false
 }
 
 func (m Model) getSearchState() (bool, bool) {
-	_, insearch := m.Searches[m.ActiveTab]
-
-	var searchFocus bool
+	insearch := m.State.TabSates[m.State.TabId].IsFiltered
+	searchFocus := false
 	if insearch {
-		searchFocus = m.Searches[m.ActiveTab].Focused()
-	} else {
-		searchFocus = false
+		searchFocus = m.State.TabSates[m.State.TabId].Search.Focused()
 	}
 	return insearch, searchFocus
 }
 
-func (m *Model) startSearch(insearch bool) (tea.Model, tea.Cmd) {
+func (m *Model) startSearch() (tea.Model, tea.Cmd) {
+	insearch, _ := m.getSearchState()
 	if !insearch {
-		m.Searches[m.ActiveTab] = initSearch()
+		m.State.TabSates[m.State.TabId].Search = initSearch()
+		m.State.TabSates[m.State.TabId].IsFiltered = true
 		return m, nil
 	}
-	ti := m.Searches[m.ActiveTab]
+	ti := m.State.TabSates[m.State.TabId].Search
 	cmd := ti.Focus()
-	m.Searches[m.ActiveTab] = ti
+	m.State.TabSates[m.State.TabId].Search = ti
+
 	return m, cmd
 }
 
 func (m *Model) blurSearch() (tea.Model, tea.Cmd) {
-	ti := m.Searches[m.ActiveTab]
+	ti := m.State.TabSates[m.State.TabId].Search
 	ti.Blur()
-	m.Searches[m.ActiveTab] = ti
+	m.State.TabSates[m.State.TabId].Search = ti
 	return m, nil
 }
 
 func (m *Model) stopSearch() (tea.Model, tea.Cmd) {
 	rowId := m.CurrentRowId()
+	m.State.TabSates[m.State.TabId].IsFiltered = false
+	m.State.TabSates[m.State.TabId].Search = textinput.Model{}
+	m.State.TabSates[m.State.TabId].Cursor = rowId
+	m.SetTable()
 
-	delete(m.Searches, m.ActiveTab)
-
-	m.ActiveTable = NewTable(m.Contents[m.ActiveTab])
-	m.ActiveRows[m.ActiveTab] = rowId - 1
-	m.SetCursor()
 	return m, nil
 }
 
@@ -169,7 +173,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "/", "?":
 			if !insearch || !searchFocus {
-				return m.startSearch(insearch)
+				return m.startSearch()
 			}
 		case "enter":
 			if insearch && searchFocus {
@@ -181,11 +185,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	if insearch && searchFocus {
-		m.Searches[m.ActiveTab], cmd = m.Searches[m.ActiveTab].Update(msg)
-		m.ActiveTable = newTableWithFilter(m.Contents[m.ActiveTab], m.Searches[m.ActiveTab].Value())
+		m.State.TabSates[m.State.TabId].Search, cmd = m.State.TabSates[m.State.TabId].Search.Update(msg)
+		s := m.State.TabSates[m.State.TabId].Search.Value()
+		if s != m.State.TabSates[m.State.TabId].CachedFilter {
+			m.State.Table = newTableWithFilter(m.Contents[m.State.TabId], s)
+		}
 	} else {
-		m.ActiveTable, cmd = m.ActiveTable.Update(msg)
-		m.ActiveRows[m.ActiveTab] = m.ActiveTable.Cursor()
+		m.State.Table, cmd = m.State.Table.Update(msg)
+		m.State.TabSates[m.State.TabId].Cursor = m.State.Table.Cursor()
 	}
 	return m, cmd
 }
@@ -202,7 +209,7 @@ func (m Model) View() string {
 
 	for i, t := range m.TabNames {
 		var style lipgloss.Style
-		isFirst, isLast, isActive := i == 0, i == len(m.TabNames)-1, i == m.ActiveTab
+		isFirst, isLast, isActive := i == 0, i == len(m.TabNames)-1, i == m.State.TabId
 		if isActive {
 			style = activeTabStyle
 		} else {
@@ -229,12 +236,13 @@ func (m Model) View() string {
 	}
 
 	w, h := GetTableDimensions()
-	m.ActiveTable.SetWidth(w)
-	m.ActiveTable.SetHeight(h)
+	m.State.Table.SetWidth(w)
+	m.State.Table.SetHeight(h)
 
 	var searchField string
-	if s, ok := m.Searches[m.ActiveTab]; ok {
-		searchField = searchBarStyle.Render(fmt.Sprintf("%v", s.View()))
+	if m.State.TabSates[m.State.TabId].IsFiltered {
+		s := m.State.TabSates[m.State.TabId].Search
+		searchField = searchBarStyle.Render(s.View())
 	}
 
 	dnInfo := infoBarStyle.
@@ -245,28 +253,41 @@ func (m Model) View() string {
 	doc.WriteString(row)
 	doc.WriteString("\n")
 	doc.WriteString(windowStyle.Width(w).Height(h).
-		Render(m.ActiveTable.View() + "\n" + infoBar),
+		Render(m.State.Table.View() + "\n" + infoBar),
 	)
 	return docStyle.Width(termWidth).Height(h).Render(doc.String())
 }
 
 func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, api *ldapapi.LdapApi) Model {
-	m := Model{TabNames: names, Contents: contents, DN: dn}
-	m.Searches = make(map[int]textinput.Model, len(names))
-	m.ActiveTable = NewTable(contents[0])
-	m.ActiveRows = make([]int, len(names))
-	m.LdapApi = api
-	quit := true
-	m.quit = &quit
-	m.FormInfo = &FormInfo{}
+	tabStates := make([]TabState, len(names))
+	for i := range tabStates {
+		tabStates[i] = TabState{
+			Cursor:     0,
+			Search:     textinput.Model{},
+			IsFiltered: false,
+		}
+	}
 
-	return m
+	state := &State{
+		Table:    NewTable(contents[0]),
+		TabId:    0,
+		TabSates: tabStates,
+		FormInfo: FormInfo{},
+		Quit:     true,
+	}
+	return Model{
+		TabNames: names,
+		Contents: contents,
+		DN:       dn,
+		State:    state,
+		LdapApi:  api,
+	}
 }
 
-func RunTabs(m Model) (FormInfo, bool) {
+func RunTabs(m Model) (*State, bool) {
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
-	return *m.FormInfo, *m.quit
+	return m.State, m.State.Quit
 }

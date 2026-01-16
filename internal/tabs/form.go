@@ -28,7 +28,6 @@ type FormInfo struct {
 	DN         string
 	TableName  string
 	TableIndex int
-	RowIndices []int
 	Api        *ldapapi.LdapApi
 }
 

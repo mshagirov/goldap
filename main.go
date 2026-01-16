@@ -33,7 +33,7 @@ func main() {
 		dn           [][]string
 		reload_model = false
 		tableIndex   = 0
-		rowIndices   []int
+		rowIndices   = make([]int, len(ldapapi.TableNames))
 	)
 
 	for true {
@@ -50,26 +50,27 @@ func main() {
 		m := tabs.NewTabsModel(ldapapi.TableNames, contents, dn, LdapApi)
 
 		if reload_model {
-			m.ActiveTab = tableIndex
-			m.ActiveTable = tabs.NewTable(contents[tableIndex])
-			m.ActiveRows = rowIndices
+			m.State.TabId = tableIndex
+			m.State.Table = tabs.NewTable(contents[tableIndex])
 			for i, rowId := range rowIndices {
-				m.ActiveRows[i] = min(len(dn[i]), rowId)
+				m.State.TabSates[i].Cursor = min(len(dn[i]), rowId)
 			}
-			m.SetCursor()
+			m.SetTable()
 
 			reload_model = false
 		}
 
-		fi, quit := tabs.RunTabs(m)
+		state, quit := tabs.RunTabs(m)
 
 		if !quit {
-			fi.Api = LdapApi
+			state.FormInfo.Api = LdapApi
 
-			rowIndices = fi.RowIndices
-			tableIndex = fi.TableIndex
+			for i := range rowIndices {
+				rowIndices[i] = m.State.TabSates[i].Cursor
+			}
+			tableIndex = state.TabId
 
-			tabs.RunForm(fi)
+			tabs.RunForm(state.FormInfo)
 			reload_model = true
 		} else {
 			break
