@@ -37,4 +37,5 @@ var (
 	formInputPadding   = lipgloss.NewStyle().Padding(0, 2)
 	formBlurredStyle   = lipgloss.NewStyle().Foreground(grays)
 	formActiveStyle    = lipgloss.NewStyle().Foreground(tableForegroundColor).Background(blurredColor)
+	formModifiedStyle  = lipgloss.NewStyle().Foreground(tableHighlightColor)
 )

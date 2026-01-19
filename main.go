@@ -70,7 +70,13 @@ func main() {
 			}
 			tableIndex = state.TabId
 
-			tabs.RunForm(state.FormInfo)
+			attrNames, updates := tabs.RunForm(state.FormInfo)
+
+			// Updates can be accessed this way
+			for i, val := range updates {
+				fmt.Println("Updated:", state.FormInfo.DN, attrNames[i], "->", val)
+			}
+
 			reload_model = true
 		} else {
 			break

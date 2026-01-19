@@ -10,6 +10,12 @@ import (
 	"github.com/mshagirov/goldap/ldapapi"
 )
 
+const (
+	passwordPlaceholder = "••••••••"
+	fieldWidth          = 40
+	inputLimit          = 80
+)
+
 type (
 	errMsg error
 )
@@ -19,7 +25,7 @@ type formModel struct {
 	inputs     []textinput.Model
 	inputNames []string
 	index      int
-	updated    map[int]struct{}
+	updated    *map[int]string
 	active     map[int]struct{}
 	err        error
 }
@@ -31,13 +37,18 @@ type FormInfo struct {
 	Api        *ldapapi.LdapApi
 }
 
-func RunForm(fi FormInfo) {
+func RunForm(fi FormInfo) ([]string, map[int]string) {
 	//func runForm(dn, tableName string, api *ldapapi.LdapApi) {
 	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
-	p := tea.NewProgram(initialFormModel(fi.DN, attrVals, attrNames), tea.WithAltScreen())
+	updates := make(map[int]string)
+	m := initialFormModel(fi.DN, attrVals, attrNames)
+	m.updated = &updates
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
+
+	return attrNames, updates
 }
 
 func initialFormModel(title string, attrValues, attrNames []string) formModel {
@@ -46,14 +57,14 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 	for i := range attrNames {
 		inputs[i] = textinput.New()
 		inputs[i].Placeholder = attrValues[i]
-		inputs[i].CharLimit = 80
-		inputs[i].Width = 40
+		inputs[i].CharLimit = inputLimit
+		inputs[i].Width = fieldWidth
 		inputs[i].Prompt = ""
 		inputNames[i] = attrNames[i]
 		if strings.Contains(strings.ToLower(attrNames[i]), "password") {
 			inputs[i].EchoMode = textinput.EchoPassword
 			inputs[i].EchoCharacter = '•'
-			inputs[i].Placeholder = "••••••••"
+			inputs[i].Placeholder = passwordPlaceholder
 		}
 
 	}
@@ -66,7 +77,6 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 		inputNames: inputNames,
 		index:      0,
 		active:     make(map[int]struct{}),
-		updated:    make(map[int]struct{}),
 		err:        nil,
 	}
 }
@@ -84,8 +94,12 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if _, ok := m.active[m.index]; !ok {
 				m.startEditing()
+				return m, textinput.Blink
+			} else {
+				// TO-DO: FOR PASSWORDS RE-ENTER TO CONFIRM with CORRECT ECHO
+				m.recordInput()
 			}
-			return m, textinput.Blink
+			return m, nil
 		case "ctrl+c", "esc":
 			if _, ok := m.active[m.index]; ok {
 				m.cancelEditing()
@@ -94,6 +108,7 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "-":
 			if _, ok := m.active[m.index]; !ok {
+
 				return m, tea.Quit
 			}
 		case "up", "shift+tab":
@@ -131,6 +146,9 @@ func (m formModel) View() string {
 		if _, ok := m.active[i]; ok {
 			val.TextStyle = formActiveStyle
 			doc.WriteString(formInputPadding.Render(val.View()))
+		} else if _, ok := (*m.updated)[i]; ok {
+			val.TextStyle = formModifiedStyle
+			doc.WriteString(formInputPadding.Render(val.View()))
 		} else {
 			val.TextStyle = formBlurredStyle
 			doc.WriteString(formInputPadding.Render(val.View()))
@@ -157,10 +175,33 @@ func (m *formModel) prevInput() {
 
 func (m *formModel) startEditing() {
 	m.active[m.index] = struct{}{}
+	if strings.Contains(strings.ToLower(m.inputNames[m.index]), "password") {
+		m.inputs[m.index].SetValue("")
+		m.inputs[m.index].Placeholder = "Enter password"
+		return
+	}
 	m.inputs[m.index].SetValue(m.inputs[m.index].Placeholder)
 }
 
 func (m *formModel) cancelEditing() {
 	delete(m.active, m.index)
+	if strings.Contains(strings.ToLower(m.inputNames[m.index]), "password") {
+		m.inputs[m.index].Placeholder = passwordPlaceholder
+	}
 	m.inputs[m.index].SetValue("")
+}
+
+func (m *formModel) recordInput() {
+	// NEED TO ADD ENTRY VALIDATION
+	delete(m.active, m.index)
+
+	old_entry := m.inputs[m.index].Placeholder
+	new_entry := m.inputs[m.index].Value()
+
+	if old_entry != new_entry {
+		(*m.updated)[m.index] = new_entry
+		m.inputs[m.index].Placeholder = new_entry
+	} else if _, ok := (*m.updated)[m.index]; !ok {
+		m.inputs[m.index].SetValue("")
+	}
 }
