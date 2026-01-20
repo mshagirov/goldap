@@ -38,4 +38,14 @@ var (
 	formBlurredStyle   = lipgloss.NewStyle().Foreground(grays)
 	formActiveStyle    = lipgloss.NewStyle().Foreground(tableForegroundColor).Background(blurredColor)
 	formModifiedStyle  = lipgloss.NewStyle().Foreground(tableHighlightColor)
+
+	msgBoxStyle = lipgloss.NewStyle().
+			Align(lipgloss.Left).
+			Padding(1, 2).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(blurredColor)
+
+	msgBlurredStyle = lipgloss.NewStyle().Foreground(blurredColor)
+	msgFocusedStyle = lipgloss.NewStyle().Foreground(highlightColor)
+	msgTitleStle    = msgBlurredStyle.Bold(true)
 )
