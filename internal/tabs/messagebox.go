@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -15,8 +16,8 @@ type MessageBoxModel struct {
 	confirm    bool
 	cancelBtn  string
 	confirmBtn string
-	width      int
-	result     MessageBoxResult
+	Width      int
+	Result     MessageBoxResult
 }
 
 type MessageBoxResult int
@@ -40,20 +41,20 @@ func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		// S/s: Trigger save result
 		case "s", "S":
-			m.result = ResultConfirm
+			m.Result = ResultConfirm
 			return m, tea.Quit
 
 		// C/c: Trigger cancel result
 		case "c", "C":
-			m.result = ResultCancel
+			m.Result = ResultCancel
 			return m, tea.Quit
 
 		// Enter: Activate focused button
 		case "enter":
 			if m.confirm {
-				m.result = ResultConfirm
+				m.Result = ResultConfirm
 			} else {
-				m.result = ResultCancel
+				m.Result = ResultCancel
 			}
 			return m, tea.Quit
 
@@ -69,7 +70,7 @@ func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Esc: Cancel
 		case "esc":
-			m.result = ResultCancel
+			m.Result = ResultCancel
 			return m, tea.Quit
 		}
 	}
@@ -84,24 +85,25 @@ func (m MessageBoxModel) View() string {
 
 	var b strings.Builder
 
-	b.WriteString(msgTitleStle.Render(m.title))
-	b.WriteString("\n")
-	b.WriteString(msgBlurredStyle.Render(m.message))
-	b.WriteString("\n")
+	b.WriteString(msgTitleStyle.Render(m.title))
+	b.WriteString("\n\n")
+	b.WriteString(msgTextStyle.Render(m.message))
+	b.WriteString("\n\n")
 
-	cancelStyle := &msgFocusedStyle
-	confirmStyle := &msgBlurredStyle
+	cancelStyle := &msgFocusedBtnStyle
+	confirmStyle := &msgBlurredBtnStyle
 	if m.confirm {
-		cancelStyle = &msgBlurredStyle
-		confirmStyle = &msgFocusedStyle
+		cancelStyle = &msgBlurredBtnStyle
+		confirmStyle = &msgFocusedBtnStyle
 	}
 
-	buttons := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		cancelStyle.Width(m.width-lipgloss.Width(m.confirmBtn)).Render(m.cancelBtn),
-		confirmStyle.Render(m.confirmBtn),
+	buttons := lipgloss.PlaceHorizontal(
+		m.Width,
+		lipgloss.Center,
+		fmt.Sprintf("%s     %s", cancelStyle.Render(m.cancelBtn), confirmStyle.Render(m.confirmBtn)),
 	)
 	b.WriteString(buttons)
+	b.WriteString("\n")
 
 	renderedContent := lipgloss.Place(
 		physicalWidth,
@@ -120,8 +122,8 @@ func NewMessageBox(title, message string) MessageBoxModel {
 		confirm:    true,
 		cancelBtn:  "[C]ancel",
 		confirmBtn: "[S]ave",
-		width:      max(lipgloss.Width(title), lipgloss.Width(message), 20),
-		result:     ResultConfirm,
+		Width:      max(lipgloss.Width(title), lipgloss.Width(message), 20),
+		Result:     ResultConfirm,
 	}
 }
 
@@ -131,6 +133,6 @@ func RunMessageBox(title, message string) MessageBoxResult {
 	if result, err := p.Run(); err != nil {
 		return ResultCancel // Default to cancel on error
 	} else {
-		return result.(MessageBoxModel).result
+		return result.(MessageBoxModel).Result
 	}
 }

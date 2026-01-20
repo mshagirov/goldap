@@ -14,6 +14,10 @@ const (
 	passwordPlaceholder = "••••••••"
 	fieldWidth          = 40
 	inputLimit          = 80
+	formHelpText        = `
+enter: start editing/record changes    esc or - (minus): exit
+esc  : cancel editing
+`
 )
 
 type (
@@ -27,6 +31,8 @@ type formModel struct {
 	index      int
 	updated    *map[int]string
 	active     map[int]struct{}
+	focused    bool // true when form fields are active else activate msgBox
+	msgBox     MessageBoxModel
 	err        error
 }
 
@@ -35,20 +41,6 @@ type FormInfo struct {
 	TableName  string
 	TableIndex int
 	Api        *ldapapi.LdapApi
-}
-
-func RunForm(fi FormInfo) ([]string, map[int]string) {
-	//func runForm(dn, tableName string, api *ldapapi.LdapApi) {
-	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
-	updates := make(map[int]string)
-	m := initialFormModel(fi.DN, attrVals, attrNames)
-	m.updated = &updates
-	p := tea.NewProgram(m, tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		log.Fatal(err)
-	}
-
-	return attrNames, updates
 }
 
 func initialFormModel(title string, attrValues, attrNames []string) formModel {
@@ -78,6 +70,8 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 		index:      0,
 		active:     make(map[int]struct{}),
 		err:        nil,
+		focused:    true,
+		msgBox:     NewMessageBox("Save changes for ...", title),
 	}
 }
 
@@ -86,7 +80,17 @@ func (m formModel) Init() tea.Cmd {
 }
 
 func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.focused {
+		return m.updateForm(msg)
+	}
+	return m.msgBox.Update(msg)
+}
+
+func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd = make([]tea.Cmd, len(m.inputs))
+
+	_, isActiveField := m.active[m.index]
+	hasUpdates := len(*m.updated) > 0
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -101,15 +105,21 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "ctrl+c", "esc":
-			if _, ok := m.active[m.index]; ok {
+			if isActiveField {
 				m.cancelEditing()
+				return m, nil
+			}
+			if hasUpdates {
+				m.focused = false
 				return m, nil
 			}
 			return m, tea.Quit
 		case "-":
-			if _, ok := m.active[m.index]; !ok {
-
+			if !isActiveField && !hasUpdates {
 				return m, tea.Quit
+			} else if !isActiveField && hasUpdates {
+				m.focused = false
+				return m, nil
 			}
 		case "up", "shift+tab":
 			m.prevInput()
@@ -136,6 +146,13 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m formModel) View() string {
+	if m.focused {
+		return m.viewForm()
+	}
+	return m.msgBox.View()
+}
+
+func (m formModel) viewForm() string {
 	doc := strings.Builder{}
 	doc.WriteString(formTitleStyle.Render(m.title))
 	doc.WriteString("\n")
@@ -155,6 +172,8 @@ func (m formModel) View() string {
 		}
 		doc.WriteString("\n")
 	}
+
+	doc.WriteString(formHelpStyle.Render(formHelpText))
 
 	return doc.String()
 }
@@ -204,4 +223,34 @@ func (m *formModel) recordInput() {
 	} else if _, ok := (*m.updated)[m.index]; !ok {
 		m.inputs[m.index].SetValue("")
 	}
+}
+
+func RunForm(fi FormInfo) ([]string, map[int]string) {
+	var updateResult MessageBoxResult
+
+	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
+
+	updates := make(map[int]string)
+
+	m := initialFormModel(fi.DN, attrVals, attrNames)
+	m.updated = &updates
+	p := tea.NewProgram(m, tea.WithAltScreen())
+
+	result, err := p.Run()
+	if err != nil {
+		log.Fatal(err)
+		return []string{}, nil
+	}
+
+	// confirmation, if needed
+	if msgBox, ok := result.(MessageBoxModel); ok {
+		updateResult = msgBox.Result
+	} else {
+		updateResult = ResultCancel // Default fallback
+	}
+	if updateResult == ResultConfirm {
+		return attrNames, updates
+	}
+
+	return []string{}, nil
 }
