@@ -142,3 +142,10 @@ import (
 - Application requires Go 1.25.4+ (specified in go.mod)
 - Use `go run .` for debugging; binary `goldap` is ignored by git
 - Configuration is stored in `~/.goldapconfig.json` (created automatically with example if missing)
+
+### Additional Guidelines
+- Function signatures returning errors follow pattern: `(result, error)` or just `error`
+- All LDAP operations must use `defer l.Close()` immediately after successful connection
+- Error messages use consistent format: `"OperationName Error; %v"` with semicolon separator
+- Configuration methods follow `Set*` naming pattern: `SetUrl()`, `SetBaseDn()`, `SetAdminDn()`
+- Table operations use sequential numbering starting from 1 (Table1, Table2, etc.)
