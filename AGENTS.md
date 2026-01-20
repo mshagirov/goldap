@@ -149,3 +149,10 @@ import (
 - Error messages use consistent format: `"OperationName Error; %v"` with semicolon separator
 - Configuration methods follow `Set*` naming pattern: `SetUrl()`, `SetBaseDn()`, `SetAdminDn()`
 - Table operations use sequential numbering starting from 1 (Table1, Table2, etc.)
+
+## Lint and Quality Assurance
+- Run `go fmt ./...` before every commit to ensure consistent formatting
+- Run `go vet ./...` to catch potential issues and suspicious constructs
+- Use `go test -race ./...` to detect data races in concurrent code
+- Consider using `golangci-lint` for comprehensive static analysis (if added to project)
+- Ensure all error handling follows the established patterns with descriptive messages
