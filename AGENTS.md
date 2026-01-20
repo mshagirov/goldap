@@ -40,6 +40,9 @@
 ## Code Style Guidelines
 
 ### Import Organization
+- Group imports in three sections with blank lines between: standard library, third-party, local packages
+- Use absolute imports for local packages (full module path)
+- Sort imports alphabetically within each group
 ```go
 import (
     // Standard library
@@ -106,6 +109,7 @@ import (
 - Manage focus state properly for input components (login, search, forms)
 - Tables are populated via LDAP search with package-defined columns and attributes
 - Support dynamic table filtering with search functionality
+- Test files should follow `*_test.go` naming convention and be placed in the same package as the code being tested
 
 ### Security and Performance
 - Never log LDAP credentials; use echo mode masking for password fields
@@ -156,3 +160,4 @@ import (
 - Use `go test -race ./...` to detect data races in concurrent code
 - Consider using `golangci-lint` for comprehensive static analysis (if added to project)
 - Ensure all error handling follows the established patterns with descriptive messages
+- This project currently has no test files - create `*_test.go` files when adding tests
