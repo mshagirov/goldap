@@ -119,7 +119,7 @@ func NewMessageBox(title, message string) MessageBoxModel {
 	return MessageBoxModel{
 		title:      title,
 		message:    message,
-		confirm:    true,
+		confirm:    false,
 		cancelBtn:  "[C]ancel",
 		confirmBtn: "[S]ave",
 		Width:      max(lipgloss.Width(title), lipgloss.Width(message), 20),
