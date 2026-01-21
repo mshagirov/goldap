@@ -59,7 +59,6 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 			inputs[i].EchoCharacter = '•'
 			inputs[i].Placeholder = passwordPlaceholder
 		}
-
 	}
 
 	inputs[0].Focus()

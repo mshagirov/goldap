@@ -110,10 +110,16 @@ func (api *LdapApi) GetAttrWithDN(dn, tableName string) ([]string, []string) {
 	e := sr.Entries[0]
 	for _, a := range e.Attributes {
 		attrNames = append(attrNames, a.Name)
-		if len(a.Values) > 1 {
-			attrVals = append(attrVals, strings.Join(a.Values, ", "))
+		vals := a.Values
+		if strings.ToLower(a.Name) == "member" {
+			if _, uidVals, ok := GetFirstDnAttrs(vals); ok {
+				vals = uidVals
+			}
+		}
+		if len(vals) > 1 {
+			attrVals = append(attrVals, strings.Join(vals, ", "))
 		} else {
-			attrVals = append(attrVals, a.Values[0])
+			attrVals = append(attrVals, vals[0])
 		}
 	}
 
