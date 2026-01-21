@@ -32,6 +32,7 @@ var (
 		"cn":          "Name",
 		"gidNumber":   "gid",
 		"memberUid":   "Members",
+		"member":      "Members",
 		"description": "Description",
 	}
 	GrpColsWidth = []int{15, 5, 30, 30}

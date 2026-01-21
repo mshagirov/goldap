@@ -17,3 +17,15 @@ func GetFirstDnAttr(dn string) (attr, value string, ok bool) {
 
 	return attr, value, true
 }
+
+func GetFirstDnAttrs(dns []string) (attrs, values []string, ok bool) {
+	attrs = make([]string, len(dns))
+	values = make([]string, len(dns))
+	for i, dn := range dns {
+		attrs[i], values[i], ok = GetFirstDnAttr(dn)
+		if !ok {
+			return []string{}, []string{}, false
+		}
+	}
+	return attrs, values, true
+}
