@@ -15,8 +15,8 @@ const (
 	fieldWidth          = 50
 	inputLimit          = 100
 	formHelpText        = `
-enter       : start/stop editing        esc/ - /ctrl-c: exit
-esc/ctrl-c  : cancel editing
+enter : start/stop editing selection     esc/ctrl-c  : cancel editing
+↑/tab/↓/shift-tab : navigation           esc/-/ctrl-c: exit
 `
 )
 
