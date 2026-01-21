@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/mshagirov/goldap/ldapapi"
 )
@@ -49,7 +50,7 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 	for i := range attrNames {
 		inputs[i] = textinput.New()
 		inputs[i].Placeholder = attrValues[i]
-		inputs[i].CharLimit = inputLimit
+		inputs[i].CharLimit = inputLimit + lipgloss.Width(attrValues[i])
 		inputs[i].Width = fieldWidth
 		inputs[i].Prompt = ""
 		inputNames[i] = attrNames[i]
