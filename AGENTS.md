@@ -143,7 +143,7 @@ import (
 - Test server creates sample data from `scripts/*.ldif` files
 - Test config: localhost:389, base DN "dc=goldap,dc=sh"
 - Admin credentials: "cn=admin,dc=goldap,dc=sh" with "admin123"
-- Application requires Go 1.22+ (check go.mod for current requirement)
+- Application requires Go 1.25.4+ (check go.mod for current requirement)
 - Use `go run .` for debugging; binary `goldap` is ignored by git
 - Configuration is stored in `~/.goldapconfig.json` (created automatically with example if missing)
 
@@ -162,5 +162,4 @@ import (
 - Ensure all error handling follows the established patterns with descriptive messages
 - Test files should follow `*_test.go` naming convention and be placed in the same package as the code being tested
 - Use table-driven tests for comprehensive test coverage
-- Test edge cases and error conditions thoroughly
 - Mock external dependencies (like LDAP connections) in unit tests
