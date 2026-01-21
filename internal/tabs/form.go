@@ -12,11 +12,11 @@ import (
 
 const (
 	passwordPlaceholder = "••••••••"
-	fieldWidth          = 40
-	inputLimit          = 80
+	fieldWidth          = 50
+	inputLimit          = 100
 	formHelpText        = `
-enter: start editing/record changes    esc or - (minus): exit
-esc  : cancel editing
+enter       : start/stop editing        esc/ - /ctrl-c: exit
+esc/ctrl-c  : cancel editing
 `
 )
 
