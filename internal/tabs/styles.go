@@ -32,13 +32,13 @@ var (
 	tableForegroundColor = lipgloss.AdaptiveColor{Light: "#000000", Dark: "#ffffff"}
 
 	// forms
-	formTitleStyle     = lipgloss.NewStyle().Foreground(highlightColor).Padding(0, 1).Border(lipgloss.RoundedBorder()).BorderForeground(blurredColor)
+	formHeaderStyle    = lipgloss.NewStyle().Foreground(highlightColor).Padding(0, 1).Border(lipgloss.RoundedBorder()).BorderForeground(blurredColor)
 	formFieldNameStyle = lipgloss.NewStyle().Foreground(goldbar).Padding(0, 1)
 	formInputPadding   = lipgloss.NewStyle().Padding(0, 2)
 	formBlurredStyle   = lipgloss.NewStyle().Foreground(grays)
 	formActiveStyle    = lipgloss.NewStyle().Foreground(tableForegroundColor).Background(blurredColor)
 	formModifiedStyle  = lipgloss.NewStyle().Foreground(tableHighlightColor)
-	formHelpStyle      = lipgloss.NewStyle().Foreground(grays)
+	formFooterStyle    = lipgloss.NewStyle().Foreground(grays)
 
 	msgBoxStyle = lipgloss.NewStyle().
 			Align(lipgloss.Left).

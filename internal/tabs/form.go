@@ -16,15 +16,9 @@ const (
 	passwordPlaceholder = "••••••••"
 	fieldWidth          = 50
 	inputLimit          = 100
-	formHelpText        = `
-enter : start/stop editing selection     esc/ctrl-c  : cancel editing
-↑/tab/↓/shift-tab : navigation           esc/-/ctrl-c: exit
+	formFooter          = `
+enter : start/stop editing selection     esc/ctrl-c  : cancel/exit
 `
-)
-
-var (
-	formHelpContent = formHelpStyle.Render(formHelpText)
-	formHelpHeight  = lipgloss.Height(formHelpContent)
 )
 
 type (
@@ -38,10 +32,14 @@ type formModel struct {
 	index      int
 	updated    *map[int]string
 	active     map[int]struct{}
-	focused    bool // true when form fields are active else activate msgBox
-	msgBox     MessageBoxModel
-	viewport   viewport.Model
+	editing    bool
 	err        error
+
+	focused bool // true when form fields are active else activate msgBox
+	msgBox  MessageBoxModel
+
+	viewport viewport.Model
+	ready    bool // for syncing viewport dimensions
 }
 
 type FormInfo struct {
@@ -88,10 +86,53 @@ func (m formModel) Init() tea.Cmd {
 }
 
 func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
+
 	if m.focused {
-		return m.updateForm(msg)
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch keypress := msg.String(); keypress {
+			case "ctrl+c":
+				return m, tea.Quit
+			case "esc", "enter", "tab", "down", "up", "shift+tab", "-":
+				return m.updateViewport(msg)
+			}
+		case tea.WindowSizeMsg:
+			headerHeight := lipgloss.Height(m.headerView())
+			footerHeight := lipgloss.Height(m.footerView())
+			verticalMarginHeight := headerHeight + footerHeight
+			if !m.ready {
+				m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
+				m.viewport.YPosition = headerHeight
+				m.viewport.SetContent(m.viewForm())
+				m.ready = true
+			} else {
+				m.viewport.Width = msg.Width
+				m.viewport.Height = msg.Height - verticalMarginHeight
+			}
+		}
+
+		if m.editing {
+			return m.updateViewport(msg)
+		}
+
+		m.viewport, cmd = m.viewport.Update(msg)
+		cmds = append(cmds, cmd)
+		return m, tea.Batch(cmds...)
 	}
+
+	// dialog box
 	return m.msgBox.Update(msg)
+}
+
+func (m formModel) updateViewport(msg tea.Msg) (tea.Model, tea.Cmd) {
+	mnew, cmd := m.updateForm(msg)
+	m = mnew.(formModel)
+	m.viewport.SetContent(m.viewForm())
+	return m, cmd
 }
 
 func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -154,16 +195,25 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m formModel) View() string {
-	if m.focused {
-		return m.viewForm()
+	if !m.focused {
+		return m.msgBox.View()
 	}
-	return m.msgBox.View()
+
+	if !m.ready {
+		return "\n  Initializing..."
+	}
+	doc := strings.Builder{}
+	doc.WriteString(m.headerView())
+	doc.WriteString("\n")
+	// doc.WriteString(m.viewForm())
+	doc.WriteString(m.viewport.View())
+	doc.WriteString(m.footerView())
+
+	return doc.String()
 }
 
 func (m formModel) viewForm() string {
 	doc := strings.Builder{}
-	doc.WriteString(formTitleStyle.Render(m.title))
-	doc.WriteString("\n")
 
 	for i, val := range m.inputs {
 		doc.WriteString(formFieldNameStyle.Width(30).Render(m.inputNames[i]))
@@ -180,10 +230,15 @@ func (m formModel) viewForm() string {
 		}
 		doc.WriteString("\n")
 	}
-
-	doc.WriteString(formHelpContent)
-
 	return doc.String()
+}
+
+func (m formModel) headerView() string {
+	return formHeaderStyle.Render(m.title)
+}
+
+func (m formModel) footerView() string {
+	return formFooterStyle.Render(formFooter)
 }
 
 // nextInput focuses the next input field
@@ -201,6 +256,7 @@ func (m *formModel) prevInput() {
 }
 
 func (m *formModel) startEditing() {
+	m.editing = true
 	m.active[m.index] = struct{}{}
 	if strings.Contains(strings.ToLower(m.inputNames[m.index]), "password") {
 		m.inputs[m.index].SetValue("")
@@ -211,6 +267,7 @@ func (m *formModel) startEditing() {
 }
 
 func (m *formModel) cancelEditing() {
+	m.editing = false
 	delete(m.active, m.index)
 	if strings.Contains(strings.ToLower(m.inputNames[m.index]), "password") {
 		m.inputs[m.index].Placeholder = passwordPlaceholder
@@ -221,6 +278,7 @@ func (m *formModel) cancelEditing() {
 func (m *formModel) recordInput() {
 	// NEED TO ADD ENTRY VALIDATION
 	delete(m.active, m.index)
+	m.editing = false
 
 	old_entry := m.inputs[m.index].Placeholder
 	new_entry := m.inputs[m.index].Value()
