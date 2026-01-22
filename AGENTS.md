@@ -140,10 +140,10 @@ import (
 
 ### Development Setup
 - Use `scripts/local-test-server.sh` for Docker-based OpenLDAP testing
-- Test server creates sample data from `scripts/*.ldif` files
+- Test server creates sample data from `scripts/*.ldif` files (0-ous.ldif, 1-uids.ldif)
 - Test config: localhost:389, base DN "dc=goldap,dc=sh"
 - Admin credentials: "cn=admin,dc=goldap,dc=sh" with "admin123"
-- Application requires Go 1.25.4+ (check go.mod for current requirement)
+- Application requires Go 1.25.4+ (see go.mod for current requirement)
 - Use `go run .` for debugging; binary `goldap` is ignored by git
 - Configuration is stored in `~/.goldapconfig.json` (created automatically with example if missing)
 

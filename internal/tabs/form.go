@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -21,6 +22,11 @@ enter : start/stop editing selection     esc/ctrl-c  : cancel editing
 `
 )
 
+var (
+	formHelpContent = formHelpStyle.Render(formHelpText)
+	formHelpHeight  = lipgloss.Height(formHelpContent)
+)
+
 type (
 	errMsg error
 )
@@ -34,6 +40,7 @@ type formModel struct {
 	active     map[int]struct{}
 	focused    bool // true when form fields are active else activate msgBox
 	msgBox     MessageBoxModel
+	viewport   viewport.Model
 	err        error
 }
 
@@ -72,6 +79,7 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 		err:        nil,
 		focused:    true,
 		msgBox:     NewMessageBox("Save changes for ...", title),
+		viewport:   viewport.New(0, 0),
 	}
 }
 
@@ -173,7 +181,7 @@ func (m formModel) viewForm() string {
 		doc.WriteString("\n")
 	}
 
-	doc.WriteString(formHelpStyle.Render(formHelpText))
+	doc.WriteString(formHelpContent)
 
 	return doc.String()
 }
