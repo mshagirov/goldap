@@ -251,16 +251,12 @@ func (m formModel) footerView() string {
 
 // nextInput focuses the next input field
 func (m *formModel) nextInput() {
-	m.index = (m.index + 1) % len(m.inputs)
+	m.index = min((m.index + 1), len(m.inputs)-1)
 }
 
 // prevInput focuses the previous input field
 func (m *formModel) prevInput() {
-	m.index--
-	// Wrap around
-	if m.index < 0 {
-		m.index = len(m.inputs) - 1
-	}
+	m.index = max(m.index-1, 0)
 }
 
 func (m *formModel) startEditing() {
