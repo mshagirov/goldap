@@ -30,12 +30,21 @@ type TabState struct {
 	CachedFilter string
 }
 
+type CmdType int
+
+const (
+	QuitCmd CmdType = iota
+	UpdateCmd
+	AddCmd
+	DeleteCmd
+)
+
 type State struct {
 	Table    table.Model
 	TabId    int
 	TabSates []TabState
 	FormInfo FormInfo
-	Quit     bool
+	Cmd      CmdType
 }
 
 type Model struct {
@@ -102,7 +111,6 @@ func (m *Model) setFormInfo() { // simplify and consolidate state snapshot and r
 		TableName:  m.TabNames[m.State.TabId],
 		TableIndex: m.State.TabId,
 	}
-	m.State.Quit = false
 }
 
 func (m Model) getSearchState() (bool, bool) {
@@ -175,10 +183,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !insearch || !searchFocus {
 				return m.startSearch()
 			}
+		case "ctrl+n":
+			m.State.Cmd = AddCmd
+			return m, tea.Quit
+		case "ctrl+d":
+			m.State.Cmd = DeleteCmd
+			m.setFormInfo()
+			return m, tea.Quit
 		case "enter":
 			if insearch && searchFocus {
 				return m.blurSearch()
 			} else {
+				m.State.Cmd = UpdateCmd
 				m.setFormInfo()
 				return m, tea.Quit
 			}
@@ -273,7 +289,7 @@ func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, a
 		TabId:    0,
 		TabSates: tabStates,
 		FormInfo: FormInfo{},
-		Quit:     true,
+		Cmd:      QuitCmd, // quit after exit by default
 	}
 	return Model{
 		TabNames: names,
@@ -284,10 +300,10 @@ func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, a
 	}
 }
 
-func RunTabs(m Model) (*State, bool) {
+func RunTabs(m Model) *State {
 	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
-	return m.State, m.State.Quit
+	return m.State
 }

@@ -60,9 +60,11 @@ func main() {
 			reload_model = false
 		}
 
-		state, quit := tabs.RunTabs(m)
-
-		if !quit {
+		state := tabs.RunTabs(m)
+		switch state.Cmd {
+		case tabs.QuitCmd:
+			return
+		case tabs.UpdateCmd:
 			state.FormInfo.Api = LdapApi
 
 			for i := range rowIndices {
@@ -75,10 +77,7 @@ func main() {
 			for i, val := range updates {
 				fmt.Println("Updated:", state.FormInfo.DN, attrNames[i], "->", val)
 			}
-
 			reload_model = true
-		} else {
-			break
 		}
 	}
 }
