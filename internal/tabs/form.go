@@ -132,6 +132,11 @@ func (m formModel) updateViewport(msg tea.Msg) (tea.Model, tea.Cmd) {
 	mnew, cmd := m.updateForm(msg)
 	m = mnew.(formModel)
 	m.viewport.SetContent(m.viewForm())
+	if (2*m.index + 2) > m.viewport.Height {
+		m.viewport.SetYOffset(m.viewport.YOffset + 2)
+	} else if 2*m.index < m.viewport.YOffset {
+		m.viewport.SetYOffset(m.viewport.YOffset - 2)
+	}
 	return m, cmd
 }
 
@@ -312,9 +317,10 @@ func RunForm(fi FormInfo) ([]string, map[int]string) {
 	if msgBox, ok := result.(MessageBoxModel); ok {
 		updateResult = msgBox.Result
 	} else {
-		updateResult = ResultCancel // Default fallback
+		updateResult = ResultCancel
 	}
 	if updateResult == ResultConfirm {
+		// return updates
 		return attrNames, updates
 	}
 
