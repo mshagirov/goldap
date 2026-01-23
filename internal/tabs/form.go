@@ -131,12 +131,15 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m formModel) updateViewport(msg tea.Msg) (tea.Model, tea.Cmd) {
 	mnew, cmd := m.updateForm(msg)
 	m = mnew.(formModel)
+
 	m.viewport.SetContent(m.viewForm())
+
 	if (2*m.index + 2) > m.viewport.Height {
 		m.viewport.SetYOffset(m.viewport.YOffset + 2)
 	} else if 2*m.index < m.viewport.YOffset {
 		m.viewport.SetYOffset(m.viewport.YOffset - 2)
 	}
+
 	return m, cmd
 }
 
