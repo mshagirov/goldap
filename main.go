@@ -71,13 +71,7 @@ func main() {
 			tableIndex = state.TabId
 
 			attrNames, updates := tabs.RunForm(state.FormInfo)
-			// _, updates := tabs.RunForm(state.FormInfo)
 
-			// Updates can be accessed this way
-			// if len(updates) > 0 {
-			// 	msgRes := tabs.RunMessageBox("Save changes for ...", state.FormInfo.DN)
-			// 	fmt.Println("msgBox:", msgRes)
-			// }
 			for i, val := range updates {
 				fmt.Println("Updated:", state.FormInfo.DN, attrNames[i], "->", val)
 			}
