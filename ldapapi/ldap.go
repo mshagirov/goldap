@@ -50,15 +50,15 @@ func (api *LdapApi) Search(filter string) (*ldap.SearchResult, error) {
 }
 
 func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
-	return api.Search(UserFilter)
+	return api.Search(TableFilters["Users"])
 }
 
 func (api *LdapApi) ListGroups() (*ldap.SearchResult, error) {
-	return api.Search(GroupFilter)
+	return api.Search(TableFilters["Groups"])
 }
 
 func (api *LdapApi) ListOUs() (*ldap.SearchResult, error) {
-	return api.Search(OUsFilter)
+	return api.Search(TableFilters["OrgUnits"])
 }
 
 func (api *LdapApi) GetTableInfo(tableName string) (TableInfo, error) {

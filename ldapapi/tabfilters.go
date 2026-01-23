@@ -3,12 +3,8 @@ package ldapapi
 import (
 	"fmt"
 	"strings"
-)
 
-const (
-	UserFilter  = "(objectClass=PosixAccount)"
-	GroupFilter = "(objectClass=PosixGroup)"
-	OUsFilter   = "(objectClass=OrganizationalUnit)"
+	"github.com/go-ldap/ldap/v3"
 )
 
 var (
@@ -17,6 +13,12 @@ var (
 		"Groups",
 		"OrgUnits",
 	} // must match cases in *ldapapi.GetTableInfo(s string)
+
+	TableFilters = map[string]string{
+		"Users":    "(objectClass=PosixAccount)",
+		"Groups":   "(objectClass=PosixGroup)",
+		"OrgUnits": "(objectClass=OrganizationalUnit)",
+	}
 
 	UsrCols = []string{"Username", "uid", "Name", "Group"}
 	UsrAttr = map[string]string{
@@ -46,20 +48,18 @@ var (
 	OUColsWidth = []int{15, 25, 25}
 )
 
+func FormatRDNFilter(tableFilter, rdn string) string {
+	return fmt.Sprintf("(&%s(%s))", tableFilter, ldap.EscapeFilter(rdn))
+}
+
 func FormatDNFilter(dn, tableName string) string {
-	// TableNames must match cases in *ldapapi.GetTableInfo(s string)
-	entryName, _, found := strings.Cut(dn, ",")
+	rdn, _, found := strings.Cut(dn, ",")
 	if !found {
 		return ""
 	}
-	switch tableName {
-	case "Users":
-		return fmt.Sprintf("(&%s(%s))", UserFilter, entryName)
-	case "Groups":
-		return fmt.Sprintf("(&%s(%s))", GroupFilter, entryName)
-	case "OrgUnits":
-		return fmt.Sprintf("(&%s(%s))", OUsFilter, entryName)
-	default:
-		return fmt.Sprintf("(%s)", entryName)
+	tableFilter, ok := TableFilters[tableName]
+	if !ok {
+		return fmt.Sprintf("(%s)", ldap.EscapeFilter(rdn))
 	}
+	return FormatRDNFilter(tableFilter, rdn)
 }
