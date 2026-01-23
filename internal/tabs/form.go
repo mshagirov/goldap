@@ -17,8 +17,8 @@ const (
 	fieldWidth          = 50
 	inputLimit          = 100
 	formFooter          = `
-enter : start/stop editing selection     esc/ctrl-c  : cancel/exit
-`
+tab/shift-tab/up/down: navigation     enter: edit/update entry
+esc  : cancel edit/exit and save      ctrl-c: exit without saving`
 )
 
 type (
