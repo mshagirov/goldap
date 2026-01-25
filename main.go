@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/mshagirov/goldap/internal/config"
@@ -74,8 +75,8 @@ func main() {
 
 			attrNames, updates := tabs.RunForm(state.FormInfo)
 
-			for i, val := range updates {
-				fmt.Println("Updated:", state.FormInfo.DN, attrNames[i], "->", val)
+			for i := range updates {
+				log.Println("Updated:", state.FormInfo.DN, attrNames[i])
 			}
 			reload_model = true
 		}
