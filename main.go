@@ -75,16 +75,12 @@ func main() {
 
 			attrNames, updates := tabs.RunForm(state.FormInfo)
 
-			for k, val := range updates {
-				if attrNames[k] == "userPassword" {
-					res, err := LdapApi.ModifyPassword(state.FormInfo.DN, val)
-					if err != nil {
-						log.Println("Error updating password for", state.FormInfo.DN)
-					} else {
-						log.Println(*res)
-					}
+			if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
+				log.Println(err)
+			} else {
+				for k := range updates {
+					log.Println("Updated:", state.FormInfo.DN, attrNames[k])
 				}
-				log.Println("Updated:", state.FormInfo.DN, attrNames[k])
 			}
 			reload_model = true
 		}
