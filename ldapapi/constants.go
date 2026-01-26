@@ -1,0 +1,5 @@
+package ldapapi
+
+const (
+	ValueDelimeter = ", "
+)
