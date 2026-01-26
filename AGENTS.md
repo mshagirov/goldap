@@ -1,6 +1,7 @@
 # AGENTS.md
 
 ## Build Commands
+**Requirements**: Go 1.25.4+ (see go.mod)
 - `go build` - Build the application binary (`goldap`)
 - `go run .` - Run the application directly without building
 - `go install .` - Install the binary to $GOPATH/bin
@@ -16,12 +17,21 @@
 - `go test -run <TestName>` - Run a specific test function
 - `go test -v ./...` - Run tests with verbose output
 - `go test -run TestFunction ./path/to/package` - Run specific test in specific package
+- `go test -run TestFormatDNFilter ./ldapapi` - Example: run single test in ldapapi package
+- `go test -v -run TestFormatDNFilter ./ldapapi` - Run single test with verbose output
 - `go test -cover` - Enable code coverage instrumentation
 - `go test -race` - Enable data race detection
 - `go test -bench=.` - Run benchmarks
 - `go test -coverprofile=coverage.out` - Generate coverage profile
 - `go test -timeout=30s` - Set test timeout
 - `go test -count=1` - Disable test caching
+
+## Table-Driven Test Patterns
+- Use struct-based test cases for comprehensive coverage: `cases := []struct { name, input, want string }`
+- Use `t.Run(c.name, func(t *testing.T) { ... })` for subtest organization
+- Follow pattern from `ldapapi/tabfilters_test.go` and `ldapapi/parse_test.go`
+- Place test files alongside source files with `*_test.go` naming convention
+- Test both positive and negative cases with descriptive names
 
 ## Advanced Build Options
 - `go build -race` - Build with race detector
@@ -111,21 +121,19 @@ import (
 - Support dynamic table filtering with search functionality
 - Test files should follow `*_test.go` naming convention and be placed in the same package as the code being tested
 
-### Security and Performance
+### Security, Performance and Dependencies
 - Never log LDAP credentials; use echo mode masking for password fields
 - Use deferred connection closing: `defer l.Close()` for all LDAP operations
 - Cache table data between tab switches to avoid redundant LDAP queries
 - Validate user input before constructing LDAP filters
 - Store config with appropriate permissions (0666 for config files)
-
-### Dependencies and Frameworks
 - Bubbletea framework for TUI components with Model interface
 - go-ldap/v3 for LDAP protocol implementation
 - lipgloss for terminal styling and responsive design
 - golang.org/x/term for terminal size detection
 - Keep third-party dependencies minimal and well-maintained
 
-### Project-Specific Patterns
+### Project-Specific Patterns and Development Setup
 - Main loop in `main.go` handles tab/form navigation with `reload_model` flag
 - Tab navigation: n/tab for next, p/shift+tab for previous
 - Search: / or ? keys; Form mode: enter on table row
@@ -137,17 +145,12 @@ import (
 - Tables use sequential numbering starting from 1
 - Configuration file permissions are set to 0666 when created
 - Missing configuration triggers automatic example JSON output to guide users
-
-### Development Setup
 - Use `scripts/local-test-server.sh` for Docker-based OpenLDAP testing
 - Test server creates sample data from `scripts/*.ldif` files (0-ous.ldif, 1-uids.ldif)
 - Test config: localhost:389, base DN "dc=goldap,dc=sh"
 - Admin credentials: "cn=admin,dc=goldap,dc=sh" with "admin123"
-- Application requires Go 1.25.4+ (see go.mod for current requirement)
 - Use `go run .` for debugging; binary `goldap` is ignored by git
 - Configuration is stored in `~/.goldapconfig.json` (created automatically with example if missing)
-
-### Additional Guidelines
 - Function signatures returning errors follow pattern: `(result, error)` or just `error`
 - All LDAP operations must use `defer l.Close()` immediately after successful connection
 - Error messages use consistent format: `"OperationName Error; %v"` with semicolon separator
