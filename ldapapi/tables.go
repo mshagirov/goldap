@@ -59,10 +59,6 @@ func processMemberValues(attrs []*ldap.EntryAttribute, colAttr map[string]string
 	return strings.Join(allValues, ", ")
 }
 
-func needsMultiAttrMerging(tableName string, colAttr map[string]string) bool {
-	return tableName == "Groups" && hasMultipleAttrsForColumn(colAttr, "Members")
-}
-
 func hasMultipleAttrsForColumn(colAttr map[string]string, columnName string) bool {
 	count := 0
 	for _, col := range colAttr {
