@@ -94,6 +94,9 @@ func (api *LdapApi) GetAttrWithDN(dn, tableName string) ([]string, []string) {
 	}
 	e := sr.Entries[0]
 	for _, a := range e.Attributes {
+		if strings.ToLower(a.Name) == "objectclass" {
+			continue
+		}
 		attrNames = append(attrNames, a.Name)
 		vals := a.Values
 		if strings.ToLower(a.Name) == "member" {
@@ -102,7 +105,7 @@ func (api *LdapApi) GetAttrWithDN(dn, tableName string) ([]string, []string) {
 			}
 		}
 		if len(vals) > 1 {
-			attrVals = append(attrVals, strings.Join(vals, ", "))
+			attrVals = append(attrVals, strings.Join(vals, ValueDelimeter))
 		} else {
 			attrVals = append(attrVals, vals[0])
 		}

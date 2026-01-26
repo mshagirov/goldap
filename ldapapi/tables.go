@@ -56,7 +56,7 @@ func processMemberValues(attrs []*ldap.EntryAttribute, colAttr map[string]string
 	slices.Sort(allValues)
 
 	// Join with comma and space
-	return strings.Join(allValues, ", ")
+	return strings.Join(allValues, ValueDelimeter)
 }
 
 func hasMultipleAttrsForColumn(colAttr map[string]string, columnName string) bool {
@@ -109,7 +109,7 @@ func LoadTableInfoFromSearchResults(
 				if columnName, ok := colAtrr[attr.Name]; ok {
 					id := colIds[columnName]
 					if len(attr.Values) > 1 {
-						row_i[id+1] = strings.Join(attr.Values, ", ")
+						row_i[id+1] = strings.Join(attr.Values, ValueDelimeter)
 					} else if len(attr.Values) > 0 {
 						row_i[id+1] = attr.Values[0]
 					}
@@ -121,7 +121,7 @@ func LoadTableInfoFromSearchResults(
 				if columnName, ok := colAtrr[attr.Name]; ok {
 					id := colIds[columnName]
 					if len(attr.Values) > 1 {
-						row_i[id+1] = strings.Join(attr.Values, ", ")
+						row_i[id+1] = strings.Join(attr.Values, ValueDelimeter)
 					} else if len(attr.Values) > 0 {
 						row_i[id+1] = attr.Values[0]
 					}
