@@ -13,7 +13,7 @@ uidNumber: 100
 gidNumber: 100
 homeDirectory: /home/asimov
 uid: asimov
-userPassword: {SSHA}ydHEsLSxEfGSlvYf5vWEbz+Eh3jcD9R+
+userPassword: {SSHA}1O2K3Ipx46hWxSV4SOdMCD0ZmLmNbNHt
 
 dn: uid=hseldon,ou=Robotics,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -31,6 +31,7 @@ uidNumber: 1000
 gidNumber: 100
 homeDirectory: /home/hseldon
 uid: hseldon
+userPassword: {SSHA}LSyj4zc8cge0xkoCcOsZr+LOFZqrO2+Q
 
 dn: uid=rdolivaw,ou=Robotics,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -47,6 +48,7 @@ uidNumber: 1001
 gidNumber: 100
 homeDirectory: /home/rdolivaw
 uid: rdolivaw
+userPassword: {SSHA}7FnpY2rx4st1AIV+nElxv85dNDr4pEXV
 
 dn: uid=jmkane,ou=Sales,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -63,6 +65,7 @@ uidNumber: 1002
 gidNumber: 1000
 homeDirectory: /home/jmkane
 uid: jmkane
+userPassword: {SSHA}lsr4G/IDXC3vErU0LLgVEAwGqzgrpX0L
 
 dn: uid=jbourne,ou=Devs,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -79,6 +82,7 @@ uidNumber: 1003
 gidNumber: 1000
 homeDirectory: /home/jbourne
 uid: jbourne
+userPassword: {SSHA}9xn9dbmTw8nntYNx6oO3Oobn3hrWvaER
 
 dn: uid=ebaley,ou=Devs,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -95,6 +99,7 @@ uidNumber: 1004
 gidNumber: 1000
 homeDirectory: /home/ebaley
 uid: ebaley
+userPassword: {SSHA}4JBpnnVwP/fkiXWdCi0biO7JK2wVtrEL
 
 dn: uid=aburgers,ou=Sales,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -112,6 +117,7 @@ uidNumber: 1005
 gidNumber: 1000
 homeDirectory: /home/aburgers
 uid: aburgers
+userPassword: {SSHA}ElQuzEBafuigcphQE+i69Hwy/lzFeRCK
 
 dn: uid=rgreventlov,ou=Robotics,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -128,6 +134,7 @@ uidNumber: 1006
 gidNumber: 1000
 homeDirectory: /home/rgreventlov
 uid: rgreventlov
+userPassword: {SSHA}CfEyTFnIbt2/qRwjAeXHhXP3Caxa3Hib
 
 dn: uid=gpowell,ou=Robotics,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -144,6 +151,7 @@ uidNumber: 1007
 gidNumber: 1000
 homeDirectory: /home/gpowell
 uid: gpowell
+userPassword: {SSHA}O4zmMQO98jMg2Sgaw1uFaABD+hUrkHCy
 
 dn: uid=mdonovan,ou=Robotics,ou=People,dc=goldap,dc=sh
 changetype: add
@@ -160,4 +168,5 @@ uidNumber: 1008
 gidNumber: 1000
 homeDirectory: /home/mdonovan
 uid: mdonovan
+userPassword: {SSHA}bJlgeU17J+xAQ6hotVkTArcZ5Z6tsYYu
 
