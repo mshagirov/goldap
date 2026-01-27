@@ -17,12 +17,19 @@ const (
 	fieldWidth          = 50
 	inputLimit          = 100
 	formFooter          = `
-tab/shift-tab/up/down: navigation     enter: edit/update entry
-esc  : cancel edit/exit and save      ctrl-c: exit without saving`
+tab/shift-tab/up/down: navigation             enter: edit/update entry
+esc : cancel edit (esc twice)/exit and save   ctrl-c: exit without saving`
 )
 
 type (
-	errMsg error
+	errMsg        error
+	editingStatus int
+)
+
+const (
+	editCANCELLED  editingStatus = iota // 0
+	editCANCELLING                      // 1
+	editACTIVE                          // 2
 )
 
 type formModel struct {
@@ -32,7 +39,7 @@ type formModel struct {
 	index      int
 	updated    *map[int]string
 	active     map[int]struct{}
-	editing    bool
+	editing    editingStatus
 	err        error
 
 	focused bool // true when form fields are active else activate msgBox
@@ -115,7 +122,7 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		if m.editing {
+		if m.editing != editCANCELLED {
 			return m.updateViewport(msg)
 		}
 
@@ -260,7 +267,7 @@ func (m *formModel) prevInput() {
 }
 
 func (m *formModel) startEditing() {
-	m.editing = true
+	m.editing = editACTIVE
 	m.active[m.index] = struct{}{}
 	if strings.Contains(strings.ToLower(m.inputNames[m.index]), "password") {
 		m.inputs[m.index].SetValue("")
@@ -271,18 +278,24 @@ func (m *formModel) startEditing() {
 }
 
 func (m *formModel) cancelEditing() {
-	m.editing = false
-	delete(m.active, m.index)
-	if strings.Contains(strings.ToLower(m.inputNames[m.index]), "password") {
-		m.inputs[m.index].Placeholder = passwordPlaceholder
+	switch m.editing {
+	case editACTIVE:
+		m.editing = editCANCELLING // wait for second call
+	default:
+		m.editing = editCANCELLED
+		delete(m.active, m.index)
+
+		if strings.Contains(strings.ToLower(m.inputNames[m.index]), "password") {
+			m.inputs[m.index].Placeholder = passwordPlaceholder
+		}
+		m.inputs[m.index].SetValue("")
 	}
-	m.inputs[m.index].SetValue("")
 }
 
 func (m *formModel) recordInput() {
 	// NEED TO ADD ENTRY VALIDATION
 	delete(m.active, m.index)
-	m.editing = false
+	m.editing = editCANCELLED
 
 	old_entry := m.inputs[m.index].Placeholder
 	new_entry := m.inputs[m.index].Value()
