@@ -35,11 +35,33 @@ func (api *LdapApi) Search(filter string) (*ldap.SearchResult, error) {
 }
 
 func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
-	return api.Search(TableFilters["Users"])
+	r, err := api.Search(TableFilters["Users"])
+	if err != nil {
+		return r, err
+	}
+
+	var uid string
+	for _, entry := range r.Entries {
+		uid = entry.GetAttributeValue("uid")
+		// record uid:dn map
+		api.Cache.Add(fmt.Sprintf("uid=%v", uid), entry.DN)
+	}
+	return r, err
 }
 
 func (api *LdapApi) ListGroups() (*ldap.SearchResult, error) {
-	return api.Search(TableFilters["Groups"])
+	r, err := api.Search(TableFilters["Groups"])
+	if err != nil {
+		return r, err
+	}
+
+	var gidNumber string
+	for _, entry := range r.Entries {
+		// record gidNumer=*:gid (group name) map
+		gidNumber = entry.GetAttributeValue("gidNumber")
+		api.Cache.Add(fmt.Sprintf("gidNumber=%v", gidNumber), entry.DN)
+	}
+	return r, err
 }
 
 func (api *LdapApi) ListOUs() (*ldap.SearchResult, error) {
