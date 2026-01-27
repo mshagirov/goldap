@@ -7,24 +7,6 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
-func (api *LdapApi) ModifyPassword(dn, newPassword string) error {
-	l, err := ldap.DialURL(api.Config.LdapUrl)
-	if err != nil {
-		return fmt.Errorf("DialURL Error; %v", err)
-	}
-	defer l.Close()
-
-	if err := l.Bind(api.Config.LdapAdminDn, api.Secret); err != nil {
-		return fmt.Errorf("Bind Error; %v", err)
-	}
-
-	passwordModifyRequest := ldap.NewPasswordModifyRequest(dn, "", newPassword)
-	if _, err = l.PasswordModify(passwordModifyRequest); err != nil {
-		return fmt.Errorf("Password could not be changed: %s", err.Error())
-	}
-	return nil
-}
-
 func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string) error {
 	l, err := ldap.DialURL(api.Config.LdapUrl)
 	if err != nil {
