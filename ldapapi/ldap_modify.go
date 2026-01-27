@@ -19,6 +19,9 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 	}
 
 	modReq := ldap.NewModifyRequest(dn, []ldap.Control{})
+
+	var values []string
+
 	for id, val := range updates {
 		attr_name := attr[id]
 		switch strings.ToLower(attr_name) {
@@ -28,9 +31,15 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 				return fmt.Errorf("Error hashing password; %v", err)
 			}
 		case "member":
-			// convert member uids to dns
+			val = strings.TrimRight(val, ValueDelimeter)
+			values, err = uidsStringToDnSlice(val, api)
+			if err != nil {
+				return err
+			}
+		default:
+			val = strings.TrimRight(val, ValueDelimeter)
+			values = strings.Split(val, ValueDelimeter)
 		}
-		values := strings.Split(val, ValueDelimeter)
 		modReq.Replace(attr_name, values)
 	}
 
@@ -38,4 +47,18 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 		return fmt.Errorf("Modify request error; %v", err)
 	}
 	return nil
+}
+
+func uidsStringToDnSlice(cleanValueString string, api *LdapApi) ([]string, error) {
+	values := strings.Split(cleanValueString, ValueDelimeter)
+
+	for k := range values {
+		dn, found := api.Cache.Get(fmt.Sprintf("uid=%s", values[k]))
+		if found {
+			values[k] = dn
+		} else {
+			return []string{}, fmt.Errorf("Error getting uid dn records for 'member' attr")
+		}
+	}
+	return values, nil
 }
