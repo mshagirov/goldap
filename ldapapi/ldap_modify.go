@@ -21,11 +21,14 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 	modReq := ldap.NewModifyRequest(dn, []ldap.Control{})
 	for id, val := range updates {
 		attr_name := attr[id]
-		if strings.ToLower(attr_name) == "userpassword" {
+		switch strings.ToLower(attr_name) {
+		case "userpassword":
 			val, err = HashPasswordSSHA(val, 4)
 			if err != nil {
 				return fmt.Errorf("Error hashing password; %v", err)
 			}
+		case "member":
+			// convert member uids to dns
 		}
 		values := strings.Split(val, ValueDelimeter)
 		modReq.Replace(attr_name, values)
