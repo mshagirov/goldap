@@ -2,6 +2,7 @@ package ldapapi
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
@@ -47,6 +48,15 @@ var (
 	}
 	OUColsWidth = []int{15, 25, 25}
 )
+
+func GetUsersColId(attr string) int {
+	colName, ok := UsrAttr[attr]
+	gidColId := -1
+	if ok {
+		gidColId = slices.Index(UsrCols, colName)
+	}
+	return gidColId
+}
 
 func FormatRDNFilter(tableFilter, rdn string) string {
 	return fmt.Sprintf("(&%s(%s))", tableFilter, ldap.EscapeFilter(rdn))

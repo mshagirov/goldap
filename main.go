@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/mshagirov/goldap/internal/cache"
 	"github.com/mshagirov/goldap/internal/config"
 	"github.com/mshagirov/goldap/internal/login"
 	"github.com/mshagirov/goldap/internal/tabs"
@@ -27,6 +28,7 @@ func main() {
 	LdapApi := &ldapapi.LdapApi{
 		Config: ldapConfig,
 		Secret: secret,
+		Cache:  cache.NewCache(),
 	}
 
 	var (
@@ -38,6 +40,10 @@ func main() {
 	)
 
 	for true {
+		LdapApi.Cache.Clear()
+		contents = make([]ldapapi.TableInfo, 0)
+		dn = make([][]string, 0)
+
 		for _, tabName := range ldapapi.TableNames {
 			t, err := LdapApi.GetTableInfo(tabName)
 			if err != nil {

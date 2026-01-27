@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"github.com/go-ldap/ldap/v3"
+	"github.com/mshagirov/goldap/internal/cache"
 	"github.com/mshagirov/goldap/internal/config"
 )
 
 type LdapApi struct {
 	Config config.Config
 	Secret string
+	Cache  cache.Cache
 }
 
 func (api *LdapApi) TryConnecting() error {
