@@ -6,24 +6,40 @@ import (
 )
 
 func TestHashPasswordSSHA_salt4(t *testing.T) {
-	cases := []string{"", " ", "   ", "p@ssw0rd", "secret_123", "~!@#$%^&*()-_=+ "}
+	cases := []struct {
+		correct  string
+		passwd   string
+		expected bool
+	}{
+		{correct: "", passwd: "", expected: true},
+		{correct: " ", passwd: "", expected: false},
+		{correct: " ", passwd: " ", expected: true},
+		{correct: "       ", passwd: "password", expected: false},
+		{correct: "       ", passwd: "       ", expected: true},
+		{correct: "p@ssw0rd", passwd: "password", expected: false},
+		{correct: "p@ssw0rd", passwd: "p@ssw0rd", expected: true},
+		{correct: "secret_123", passwd: "secret_123", expected: true},
+		{correct: "~!@#$%^&*()-_=+ ", passwd: " +=_-)(*&^%$#@!~", expected: false},
+		{correct: "~!@#$%^&*()-_=+ ", passwd: "~!@#$%^&*()-_=+ ", expected: true},
+	}
 
 	for id, c := range cases {
 		t.Run(
 			fmt.Sprintf("Test %v", id),
 			func(t *testing.T) {
-				out, err := HashPasswordSSHA(c, 4)
+				out, err := HashPasswordSSHA(c.correct, 4)
 				if err != nil {
 					t.Errorf("error using HashPasswordSSHA %v", err)
 					return
 				}
-				ok, err := VerifyHashSSHA(c, out)
+				got, err := VerifyHashSSHA(c.passwd, out)
 				if err != nil {
 					t.Errorf("error using VerifyHashSSHA %v", err)
 					return
 				}
-				if !ok {
-					t.Errorf("%v did not match the hash %v", c, out)
+				if got != c.expected {
+					t.Errorf("Hashing '%v' verify with %v expected %v got %v",
+						c.correct, c.passwd, c.expected, got)
 					return
 				}
 			})
@@ -31,24 +47,41 @@ func TestHashPasswordSSHA_salt4(t *testing.T) {
 }
 
 func TestHashPasswordSSHA_salt8(t *testing.T) {
-	cases := []string{"", " ", "   ", "p@ssw0rd", "secret_123", "~!@#$%^&*()-_=+ "}
+	cases := []struct {
+		correct  string
+		passwd   string
+		expected bool
+	}{
+		{correct: "", passwd: "", expected: true},
+		{correct: " ", passwd: "", expected: false},
+		{correct: " ", passwd: " ", expected: true},
+		{correct: "       ", passwd: "password", expected: false},
+		{correct: "       ", passwd: "       ", expected: true},
+		{correct: "p@ssw0rd", passwd: "password", expected: false},
+		{correct: "p@ssw0rd", passwd: "p@ssw0rd", expected: true},
+		{correct: "secret_123", passwd: "secret_123", expected: true},
+		{correct: "~!@#$%^&*()-_=+ ", passwd: " +=_-)(*&^%$#@!~", expected: false},
+		{correct: "~!@#$%^&*()-_=+ ", passwd: "~!@#$%^&*()-_=+ ", expected: true},
+	}
 
 	for id, c := range cases {
 		t.Run(
 			fmt.Sprintf("Test %v", id),
 			func(t *testing.T) {
-				out, err := HashPasswordSSHA(c, 8)
+				out, err := HashPasswordSSHA(c.correct, 8)
 				if err != nil {
 					t.Errorf("error using HashPasswordSSHA %v", err)
 					return
 				}
-				ok, err := VerifyHashSSHA(c, out)
+				got, err := VerifyHashSSHA(c.passwd, out)
 				if err != nil {
 					t.Errorf("error using VerifyHashSSHA %v", err)
 					return
 				}
-				if !ok {
-					t.Errorf("%v did not match the hash %v", c, out)
+				if got != c.expected {
+					t.Errorf("Hashing '%v' verify with '%v' expected %v got %v",
+						c.correct, c.passwd, c.expected, got)
+
 					return
 				}
 			})
