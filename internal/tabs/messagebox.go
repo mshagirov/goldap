@@ -10,7 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
-type MessageBoxModel struct {
+type ConfirmBoxModel struct {
 	title      string
 	message    string
 	confirm    bool
@@ -27,15 +27,15 @@ const (
 	ResultConfirm
 )
 
-// func NewConfirmSaveBox(message string) MessageBoxModel {
+// func NewConfirmSaveBox(message string) ConfirmBoxModel {
 // 	return NewMessageBox("Save changes?", message, "[C]ancel", "[S]ave")
 // }
 
-func (m MessageBoxModel) Init() tea.Cmd {
+func (m ConfirmBoxModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ConfirmBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -77,7 +77,7 @@ func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m MessageBoxModel) View() string {
+func (m ConfirmBoxModel) View() string {
 	physicalWidth, physicalHeight, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		physicalWidth, physicalHeight = 20, 20
@@ -115,8 +115,8 @@ func (m MessageBoxModel) View() string {
 	return renderedContent
 }
 
-func NewMessageBox(title, message string) MessageBoxModel {
-	return MessageBoxModel{
+func NewMessageBox(title, message string) ConfirmBoxModel {
+	return ConfirmBoxModel{
 		title:      title,
 		message:    message,
 		confirm:    false,
@@ -133,6 +133,6 @@ func RunMessageBox(title, message string) MessageBoxResult {
 	if result, err := p.Run(); err != nil {
 		return ResultCancel // Default to cancel on error
 	} else {
-		return result.(MessageBoxModel).Result
+		return result.(ConfirmBoxModel).Result
 	}
 }

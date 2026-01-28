@@ -36,6 +36,12 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 			if err != nil {
 				return err
 			}
+		case "memberuid":
+			val = strings.TrimRight(val, ValueDelimeter)
+			values, err = uidsVerifyWithDnCache(val, api)
+			if err != nil {
+				return err
+			}
 		default:
 			val = strings.TrimRight(val, ValueDelimeter)
 			values = strings.Split(val, ValueDelimeter)
@@ -57,7 +63,18 @@ func uidsStringToDnSlice(cleanValueString string, api *LdapApi) ([]string, error
 		if found {
 			values[k] = dn
 		} else {
-			return []string{}, fmt.Errorf("ldap_modify couldn't find dn for uid=%s when updating 'member' attr", values[k])
+			return []string{}, fmt.Errorf("Group member update: uid=%s not found", values[k])
+		}
+	}
+	return values, nil
+}
+
+func uidsVerifyWithDnCache(cleanValueString string, api *LdapApi) ([]string, error) {
+	values := strings.Split(cleanValueString, ValueDelimeter)
+	for _, uid := range values {
+		_, found := api.Cache.Get(fmt.Sprintf("uid=%s", uid))
+		if !found {
+			return []string{}, fmt.Errorf("Group memberUid update: uid=%s not found", uid)
 		}
 	}
 	return values, nil

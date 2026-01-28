@@ -43,7 +43,7 @@ type formModel struct {
 	err        error
 
 	focused bool // true when form fields are active else activate msgBox
-	msgBox  MessageBoxModel
+	msgBox  ConfirmBoxModel
 
 	viewport viewport.Model
 	ready    bool // for syncing viewport dimensions
@@ -326,7 +326,7 @@ func RunForm(fi FormInfo) ([]string, map[int]string) {
 	}
 
 	// confirmation, if needed
-	if msgBox, ok := result.(MessageBoxModel); ok {
+	if msgBox, ok := result.(ConfirmBoxModel); ok {
 		updateResult = msgBox.Result
 	} else {
 		updateResult = ResultCancel
