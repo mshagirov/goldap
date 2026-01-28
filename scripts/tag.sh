@@ -26,6 +26,7 @@ VERSION_NUMBER=$1
 TAGNAME="v${VERSION_NUMBER}-${RELEASE}"
 
 echo "setting git tag to $TAGNAME"
-
 git tag -a $TAGNAME -m "relase version set to $TAGNAME" 
 
+echo pushing to origin
+git push origin $TAGNAME
