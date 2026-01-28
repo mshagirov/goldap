@@ -183,7 +183,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !insearch || !searchFocus {
 				return m.startSearch()
 			}
-		case "ctrl+n":
+		case "ctrl+n", "ctrl+a":
 			m.State.Cmd = AddCmd
 			return m, tea.Quit
 		case "ctrl+d":

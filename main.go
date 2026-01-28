@@ -71,6 +71,8 @@ func main() {
 		switch state.Cmd {
 		case tabs.QuitCmd:
 			return
+		case tabs.AddCmd:
+			log.Println("Added:", "DN=UID,CN...")
 		case tabs.UpdateCmd:
 			state.FormInfo.Api = LdapApi
 

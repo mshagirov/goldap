@@ -43,4 +43,24 @@ var (
 		"description": "Description",
 	}
 	OUColsWidth = []int{15, 25, 25}
+
+	// posixAccount requirements: must has objectClass : posixAccount
+	defaultUserFields = []struct {
+		name string
+		val  []string
+	}{
+		// auto: dn, cn
+		// auto: objectClass: top, posixAccount, inetOrgPerson
+		// suggest: homeDirectory
+		{name: "employeeType", val: []string{"Staff"}},
+		{name: "uid", val: []string{}},
+		{name: "givenName", val: []string{}},
+		{name: "sn", val: []string{}},
+		{name: "mail", val: []string{}},
+		{name: "uidNumber", val: []string{}},
+		{name: "gidNumber", val: []string{}},
+		{name: "homeDirectory", val: []string{}},
+		{name: "userPassword", val: []string{}},
+		{name: "description", val: []string{}},
+	}
 )
