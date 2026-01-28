@@ -30,6 +30,7 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 			if err != nil {
 				return fmt.Errorf("Error hashing password; %v", err)
 			}
+			values = []string{val}
 		case "member":
 			val = strings.TrimRight(val, ValueDelimeter)
 			values, err = uidsStringToDnSlice(val, api)
