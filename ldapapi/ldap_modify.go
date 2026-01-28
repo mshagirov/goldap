@@ -57,7 +57,7 @@ func uidsStringToDnSlice(cleanValueString string, api *LdapApi) ([]string, error
 		if found {
 			values[k] = dn
 		} else {
-			return []string{}, fmt.Errorf("Error getting uid dn records for 'member' attr")
+			return []string{}, fmt.Errorf("ldap_modify couldn't find dn for uid=%s when updating 'member' attr", values[k])
 		}
 	}
 	return values, nil
