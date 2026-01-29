@@ -50,16 +50,52 @@ var (
 	}{
 		"Users": {
 			{Name: "ou", Val: []string{"People"}},
+			{Name: "objectClass", Val: []string{"posixAccount", "inetOrgPerson", "top"}},
 			{Name: "employeeType", Val: []string{"Staff"}},
-			{Name: "uid", Val: []string{}},
-			{Name: "givenName", Val: []string{}},
-			{Name: "sn", Val: []string{}},
-			{Name: "mail", Val: []string{}},
-			{Name: "uidNumber", Val: []string{}},
-			{Name: "gidNumber", Val: []string{}},
-			{Name: "homeDirectory", Val: []string{}},
-			{Name: "userPassword", Val: []string{}},
-			{Name: "description", Val: []string{}},
+			{Name: "uid", Val: []string{"enter username ..."}},
+			{Name: "givenName", Val: []string{"name ..."}},
+			{Name: "sn", Val: []string{"surname ..."}},
+			{Name: "mail", Val: []string{"user's email ..."}},
+			{Name: "uidNumber", Val: []string{"1234"}},
+			{Name: "gidNumber", Val: []string{"123"}},
+			{Name: "homeDirectory", Val: []string{"path to home folder ..."}},
+			{Name: "userPassword", Val: []string{"password"}},
+			{Name: "description"},
 		},
+		"Groups": {
+			{Name: "ou"},
+			{Name: "objectClass", Val: []string{"top", "posixGroup"}},
+			{Name: "cn", Val: []string{"Group's name"}},
+			{Name: "gidNumber"},
+			{Name: "member"},
+			{Name: "memberUid"},
+		},
+		"OrgUnits": {},
+	}
+
+	NonDefaultTabFields = []struct {
+		Name string
+		Val  []string
+	}{
+		{Name: "dn", Val: []string{""}},
+		{Name: "ou", Val: []string{""}},
+		{Name: "cn", Val: []string{""}},
+		{Name: "objectClass", Val: []string{"top"}},
+		{Name: "description", Val: []string{""}},
+	}
+
+	RequiredFields = map[string]map[string]struct{}{
+		"Users": {
+			"uid":           {},
+			"givenName":     {},
+			"sn":            {},
+			"mail":          {},
+			"uidNumber":     {},
+			"gidNumber":     {},
+			"homeDirectory": {},
+			"userPassword":  {},
+		},
+		"Groups":   {},
+		"OrgUnits": {},
 	}
 )
