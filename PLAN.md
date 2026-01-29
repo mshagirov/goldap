@@ -7,6 +7,6 @@
 - [ ] Creating new LDAP entry
   - use forms UI backend (UI) to create a new LDAP entry
   - save newly created entry (ldap API)
-- [ ] Verification/Result display after updates to LDAP
+- [ ] Verification/Result display UI after updates to LDAP
 - [ ] Deleting ldap entries
 - [ ] Modifying/moving DN record

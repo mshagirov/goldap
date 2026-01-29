@@ -185,6 +185,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "ctrl+n", "ctrl+a":
 			m.State.Cmd = AddCmd
+			m.setFormInfo()
 			return m, tea.Quit
 		case "ctrl+d":
 			m.State.Cmd = DeleteCmd

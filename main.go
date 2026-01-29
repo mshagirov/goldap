@@ -71,8 +71,22 @@ func main() {
 		switch state.Cmd {
 		case tabs.QuitCmd:
 			return
+
 		case tabs.AddCmd:
-			log.Println("Added:", "DN=UID,CN...")
+			state.FormInfo.Api = LdapApi
+			for i := range rowIndices {
+				rowIndices[i] = m.State.TabSates[i].Cursor
+			}
+			tableIndex = state.TabId
+
+			attrNames, updates := tabs.RunAddForm(state.FormInfo)
+
+			log.Println("Add entry to", state.FormInfo.TableName, "DN=UID,CN...")
+			for k := range updates {
+				log.Println("Updated:", state.FormInfo.DN, attrNames[k], "->", updates[k])
+			}
+			reload_model = true
+
 		case tabs.UpdateCmd:
 			state.FormInfo.Api = LdapApi
 
@@ -81,7 +95,7 @@ func main() {
 			}
 			tableIndex = state.TabId
 
-			attrNames, updates := tabs.RunForm(state.FormInfo)
+			attrNames, updates := tabs.RunUpdateForm(state.FormInfo)
 
 			if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
 				log.Println(err)
@@ -91,6 +105,7 @@ func main() {
 				}
 			}
 			reload_model = true
+
 		}
 	}
 }

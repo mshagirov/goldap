@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -61,7 +62,11 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 	var inputNames []string = make([]string, len(attrNames))
 	for i := range attrNames {
 		inputs[i] = textinput.New()
-		inputs[i].Placeholder = attrValues[i]
+		if len(attrValues[i]) > 0 {
+			inputs[i].Placeholder = attrValues[i]
+		} else {
+			inputs[i].Placeholder = attrNames[i]
+		}
 		inputs[i].CharLimit = inputLimit + lipgloss.Width(attrValues[i])
 		inputs[i].Width = fieldWidth
 		inputs[i].Prompt = ""
@@ -308,7 +313,7 @@ func (m *formModel) recordInput() {
 	}
 }
 
-func RunForm(fi FormInfo) ([]string, map[int]string) {
+func RunUpdateForm(fi FormInfo) ([]string, map[int]string) {
 	var updateResult MessageBoxResult
 
 	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
@@ -325,7 +330,6 @@ func RunForm(fi FormInfo) ([]string, map[int]string) {
 		return []string{}, nil
 	}
 
-	// confirmation, if needed
 	if msgBox, ok := result.(ConfirmBoxModel); ok {
 		updateResult = msgBox.Result
 	} else {
@@ -333,6 +337,69 @@ func RunForm(fi FormInfo) ([]string, map[int]string) {
 	}
 	if updateResult == ResultConfirm {
 		// return updates
+		return attrNames, updates
+	}
+
+	return []string{}, nil
+}
+
+func RunAddForm(fi FormInfo) ([]string, map[int]string) {
+	updates := make(map[int]string)
+	// fi.DN == "" (empty; AUTO GENERATED); if table not user or group allow DN editing
+	// fi.TableName=from	ldapapi.TableNames AUTO GEN use defaults for each table if possible
+	// TableIndex= tab ID:int
+	// Api=ptr to ldapapi.LdapApi
+	// auto: dn, cn
+	// auto: objectClass: top, posixAccount, inetOrgPerson
+	// suggest: homeDirectory
+	// 	DefaultFields
+
+	defaultAttr, ok := ldapapi.DefaultFields[fi.TableName]
+	if !ok {
+		defaultAttr = []struct {
+			Name string
+			Val  []string
+		}{
+			{Name: "dn", Val: []string{""}},
+			{Name: "ou", Val: []string{""}},
+			{Name: "cn", Val: []string{""}},
+			{Name: "objectClass", Val: []string{"top"}},
+			{Name: "description", Val: []string{""}},
+		}
+	}
+	attrNames := make([]string, len(defaultAttr))
+	attrVals := make([]string, len(defaultAttr))
+	for i := range defaultAttr {
+		attrNames[i] = defaultAttr[i].Name
+		attrVals[i] = strings.Join(defaultAttr[i].Val, ldapapi.ValueDelimeter)
+	}
+
+	m := initialFormModel(fmt.Sprintf("%s: new entry", fi.TableName), attrVals, attrNames)
+	m.updated = &updates
+	p := tea.NewProgram(m, tea.WithAltScreen())
+
+	result, err := p.Run()
+	if err != nil {
+		log.Fatal(err)
+		return []string{}, nil
+	}
+
+	// report and confirm entries
+	var updateResult MessageBoxResult
+	if msgBox, ok := result.(ConfirmBoxModel); ok {
+		updateResult = msgBox.Result
+	} else {
+		updateResult = ResultCancel
+	}
+
+	if updateResult == ResultConfirm {
+		// all updated;
+		for id := range attrNames {
+			if _, ok := updates[id]; !ok {
+				// copy default if not updated
+				updates[id] = attrVals[id]
+			}
+		}
 		return attrNames, updates
 	}
 
