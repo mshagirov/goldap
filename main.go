@@ -74,6 +74,7 @@ func main() {
 
 		case tabs.AddCmd:
 			state.FormInfo.Api = LdapApi
+			state.FormInfo.DN = ldapConfig.LdapBaseDn
 			for i := range rowIndices {
 				rowIndices[i] = m.State.TabSates[i].Cursor
 			}
@@ -81,7 +82,7 @@ func main() {
 
 			attrNames, updates := tabs.RunAddForm(state.FormInfo)
 
-			log.Println("Add entry to", state.FormInfo.TableName, "DN=UID,CN...")
+			log.Println("Added entry to", state.FormInfo.TableName)
 			for k := range updates {
 				log.Println("Updated:", state.FormInfo.DN, attrNames[k], "->", updates[k])
 			}
