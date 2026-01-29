@@ -191,8 +191,14 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case "up", "shift+tab":
+			if isActiveField {
+				m.recordInput()
+			}
 			m.prevInput()
 		case "down", "tab":
+			if isActiveField {
+				m.recordInput()
+			}
 			m.nextInput()
 		}
 
@@ -356,17 +362,9 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 
 	defaultAttr, ok := ldapapi.DefaultFields[fi.TableName]
 	if !ok {
-		defaultAttr = []struct {
-			Name string
-			Val  []string
-		}{
-			{Name: "dn", Val: []string{""}},
-			{Name: "ou", Val: []string{""}},
-			{Name: "cn", Val: []string{""}},
-			{Name: "objectClass", Val: []string{"top"}},
-			{Name: "description", Val: []string{""}},
-		}
+		defaultAttr = ldapapi.NonDefaultTabFields
 	}
+
 	attrNames := make([]string, len(defaultAttr))
 	attrVals := make([]string, len(defaultAttr))
 	for i := range defaultAttr {
