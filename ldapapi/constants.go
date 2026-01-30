@@ -86,16 +86,20 @@ var (
 
 	RequiredFields = map[string]map[string]struct{}{
 		"Users": {
-			"uid":           {},
-			"givenName":     {},
-			"sn":            {},
-			"mail":          {},
-			"uidNumber":     {},
-			"gidNumber":     {},
-			"homeDirectory": {},
-			"userPassword":  {},
+			"uid":          {},
+			"givenName":    {},
+			"sn":           {},
+			"uidNumber":    {},
+			"gidNumber":    {},
+			"userPassword": {},
 		},
-		"Groups":   {},
-		"OrgUnits": {},
+		"Groups": {
+			"cn":        {},
+			"gidNumber": {},
+		},
+		"OrgUnits": {
+			"ou": {},
+			"dn": {},
+		},
 	}
 )

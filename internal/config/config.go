@@ -10,6 +10,18 @@ type Config struct {
 	LdapUrl     string `json:"LDAP_URL"`
 	LdapBaseDn  string `json:"LDAP_BASE_DN"`
 	LdapAdminDn string `json:"LDAP_ADMIN_DN"`
+	Users       []struct {
+		Name string   `json:"Name"`
+		Val  []string `json:"Val"`
+	} `json:"Users"`
+	Groups []struct {
+		Name string   `json:"Name"`
+		Val  []string `json:"Val"`
+	} `json:"Groups"`
+	OrgUnits []struct {
+		Name string   `json:"Name"`
+		Val  []string `json:"Val"`
+	} `json:"OrgUnits"`
 }
 
 const fileName = ".goldapconfig.json"

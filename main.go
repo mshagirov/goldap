@@ -13,11 +13,31 @@ import (
 )
 
 func main() {
-	ldapConfig := config.Read()
-	if ldapConfig.LdapUrl == "" {
+	cfg := config.Read()
+	if cfg.LdapUrl == "" {
 		fmt.Printf("%v", config.ExampleJson())
 		os.Exit(1)
 	}
+
+	fmt.Println("Users: ", len(cfg.Users), " attributes {")
+	for _, attr := range cfg.Users {
+		fmt.Printf("%15v : %20v\n", attr.Name, attr.Val)
+	}
+	fmt.Println("}")
+
+	fmt.Println("Groups: ", len(cfg.Groups), " attributes {")
+	for _, attr := range cfg.Groups {
+		fmt.Printf("%15v : %20v\n", attr.Name, attr.Val)
+	}
+	fmt.Println("}")
+
+	fmt.Println("OrgUnits: ", len(cfg.OrgUnits), " attributes {")
+	for _, attr := range cfg.OrgUnits {
+		fmt.Printf("%15v : %20v\n", attr.Name, attr.Val)
+	}
+	fmt.Println("}")
+
+	os.Exit(0)
 
 	secret, err := login.Run()
 	if err != nil {
@@ -26,7 +46,7 @@ func main() {
 	}
 
 	LdapApi := &ldapapi.LdapApi{
-		Config: ldapConfig,
+		Config: cfg,
 		Secret: secret,
 		Cache:  cache.NewCache(),
 	}
@@ -74,7 +94,7 @@ func main() {
 
 		case tabs.AddCmd:
 			state.FormInfo.Api = LdapApi
-			state.FormInfo.DN = ldapConfig.LdapBaseDn
+			state.FormInfo.DN = cfg.LdapBaseDn
 			for i := range rowIndices {
 				rowIndices[i] = m.State.TabSates[i].Cursor
 			}
