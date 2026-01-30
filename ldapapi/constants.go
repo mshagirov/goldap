@@ -44,7 +44,7 @@ var (
 	}
 	OUColsWidth = []int{15, 25, 25}
 
-	DefaultFields = map[string][]struct {
+	DefaultAttributes = map[string][]struct {
 		Name string
 		Val  []string
 	}{
@@ -73,7 +73,7 @@ var (
 		"OrgUnits": {},
 	}
 
-	NonDefaultTabFields = []struct {
+	UnknownTableAttributes = []struct {
 		Name string
 		Val  []string
 	}{
@@ -84,14 +84,16 @@ var (
 		{Name: "description", Val: []string{""}},
 	}
 
-	RequiredFields = map[string]map[string]struct{}{
+	RequiredAttributes = map[string]map[string]struct{}{
 		"Users": {
-			"uid":          {},
-			"givenName":    {},
-			"sn":           {},
-			"uidNumber":    {},
-			"gidNumber":    {},
-			"userPassword": {},
+			"uid":           {},
+			"givenName":     {},
+			"sn":            {},
+			"mail":          {},
+			"uidNumber":     {},
+			"gidNumber":     {},
+			"homeDirectory": {},
+			"userPassword":  {},
 		},
 		"Groups": {
 			"cn":        {},

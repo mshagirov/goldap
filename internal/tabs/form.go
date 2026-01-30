@@ -3,6 +3,7 @@ package tabs
 import (
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -43,6 +44,10 @@ type formModel struct {
 	editing    editingStatus
 	err        error
 
+	recordOnMove     bool             // record before moving to next entry
+	eraseOnEdit      map[int]struct{} // erase default suggestion on edit
+	alwaysRecordEdit bool             // always record entries incl. empty
+
 	focused bool // true when form fields are active else activate msgBox
 	msgBox  ConfirmBoxModel
 
@@ -75,6 +80,7 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 			inputs[i].EchoMode = textinput.EchoPassword
 			inputs[i].EchoCharacter = '•'
 			inputs[i].Placeholder = passwordPlaceholder
+			attrValues[i] = ""
 		}
 	}
 
@@ -168,10 +174,8 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if _, ok := m.active[m.index]; !ok {
 				m.startEditing()
 				return m, textinput.Blink
-			} else {
-				// TO-DO: FOR PASSWORDS RE-ENTER TO CONFIRM with CORRECT ECHO
-				m.recordInput()
 			}
+			m.recordInput()
 			return m, nil
 		case "ctrl+c", "esc":
 			if isActiveField {
@@ -191,12 +195,12 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case "up", "shift+tab":
-			if isActiveField {
+			if isActiveField && m.recordOnMove {
 				m.recordInput()
 			}
 			m.prevInput()
 		case "down", "tab":
-			if isActiveField {
+			if isActiveField && m.recordOnMove {
 				m.recordInput()
 			}
 			m.nextInput()
@@ -285,7 +289,10 @@ func (m *formModel) startEditing() {
 		m.inputs[m.index].Placeholder = "Enter password"
 		return
 	}
-	m.inputs[m.index].SetValue(m.inputs[m.index].Placeholder)
+
+	if _, ok := m.eraseOnEdit[m.index]; !ok {
+		m.inputs[m.index].SetValue(m.inputs[m.index].Placeholder)
+	}
 }
 
 func (m *formModel) cancelEditing() {
@@ -311,7 +318,9 @@ func (m *formModel) recordInput() {
 	old_entry := m.inputs[m.index].Placeholder
 	new_entry := m.inputs[m.index].Value()
 
-	if old_entry != new_entry {
+	changed := old_entry != new_entry
+
+	if changed || m.alwaysRecordEdit {
 		(*m.updated)[m.index] = new_entry
 		m.inputs[m.index].Placeholder = new_entry
 	} else if _, ok := (*m.updated)[m.index]; !ok {
@@ -360,9 +369,9 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 	// suggest: homeDirectory
 	// 	DefaultFields
 
-	defaultAttr, ok := ldapapi.DefaultFields[fi.TableName]
+	defaultAttr, ok := ldapapi.DefaultAttributes[fi.TableName]
 	if !ok {
-		defaultAttr = ldapapi.NonDefaultTabFields
+		defaultAttr = ldapapi.UnknownTableAttributes
 	}
 
 	attrNames := make([]string, len(defaultAttr))
@@ -372,7 +381,17 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 		attrVals[i] = strings.Join(defaultAttr[i].Val, ldapapi.ValueDelimeter)
 	}
 
+	eraseOnEdit := map[int]struct{}{}
+	if requiredAttr, ok := ldapapi.RequiredAttributes[fi.TableName]; ok {
+		for attr := range requiredAttr {
+			eraseOnEdit[slices.Index(attrNames, attr)] = struct{}{}
+		}
+	}
+
 	m := initialFormModel(fmt.Sprintf("%s: new entry", fi.TableName), attrVals, attrNames)
+	m.recordOnMove = true
+	m.alwaysRecordEdit = true
+	m.eraseOnEdit = eraseOnEdit
 	m.updated = &updates
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -393,8 +412,14 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 	if updateResult == ResultConfirm {
 		// all updated;
 		for id := range attrNames {
-			if _, ok := updates[id]; !ok {
-				// copy default if not updated
+			_, ok := updates[id]
+			_, req := eraseOnEdit[id]
+			if req && !ok {
+				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", fi.TableName, attrNames[id])
+				return []string{}, nil
+			}
+			if !ok && !req {
+				// copy default if not updated (shared attributes)
 				updates[id] = attrVals[id]
 			}
 		}
