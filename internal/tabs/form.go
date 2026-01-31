@@ -328,7 +328,9 @@ func (m *formModel) recordInput() {
 	}
 }
 
-func RunUpdateForm(fi FormInfo) ([]string, map[int]string) {
+func RunUpdateForm(s *State) ([]string, map[int]string) {
+	fi := s.FormInfo
+
 	var updateResult MessageBoxResult
 
 	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
@@ -358,7 +360,7 @@ func RunUpdateForm(fi FormInfo) ([]string, map[int]string) {
 	return []string{}, nil
 }
 
-func RunAddForm(fi FormInfo) ([]string, map[int]string) {
+func RunAddForm(s *State) ([]string, map[int]string) {
 	updates := make(map[int]string)
 	// fi.DN == "" (empty; AUTO GENERATED); if table not user or group allow DN editing
 	// fi.TableName=from	ldapapi.TableNames AUTO GEN use defaults for each table if possible
@@ -369,7 +371,7 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 	// suggest: homeDirectory
 	// 	DefaultFields
 
-	defaultAttr, ok := ldapapi.DefaultAttributes[fi.TableName]
+	defaultAttr, ok := ldapapi.DefaultAttributes[s.FormInfo.TableName]
 	if !ok {
 		defaultAttr = ldapapi.UnknownTableAttributes
 	}
@@ -382,13 +384,13 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 	}
 
 	eraseOnEdit := map[int]struct{}{}
-	if requiredAttr, ok := ldapapi.RequiredAttributes[fi.TableName]; ok {
+	if requiredAttr, ok := ldapapi.RequiredAttributes[s.FormInfo.TableName]; ok {
 		for attr := range requiredAttr {
 			eraseOnEdit[slices.Index(attrNames, attr)] = struct{}{}
 		}
 	}
 
-	m := initialFormModel(fmt.Sprintf("%s: new entry", fi.TableName), attrVals, attrNames)
+	m := initialFormModel(fmt.Sprintf("%s: new entry", s.FormInfo.TableName), attrVals, attrNames)
 	m.recordOnMove = true
 	m.alwaysRecordEdit = true
 	m.eraseOnEdit = eraseOnEdit
@@ -415,7 +417,7 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 			_, ok := updates[id]
 			_, req := eraseOnEdit[id]
 			if req && !ok {
-				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", fi.TableName, attrNames[id])
+				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrNames[id])
 				return []string{}, nil
 			}
 			if !ok && !req {
@@ -423,6 +425,14 @@ func RunAddForm(fi FormInfo) ([]string, map[int]string) {
 				updates[id] = attrVals[id]
 			}
 		}
+
+		dn_str, err := ldapapi.ConstructDnFromUpdates(attrNames, updates, s.FormInfo.Api.Config.LdapBaseDn, s.FormInfo.TableName)
+		if err != nil {
+			log.Println(err)
+			return []string{}, nil
+		}
+
+		s.FormInfo.DN = dn_str
 		return attrNames, updates
 	}
 

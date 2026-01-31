@@ -98,12 +98,13 @@ func main() {
 			}
 			tableIndex = state.TabId
 
-			attrNames, updates := tabs.RunAddForm(state.FormInfo)
+			attrNames, updates := tabs.RunAddForm(state)
 
-			log.Println("Added entry to", state.FormInfo.TableName)
+			log.Println("Added entry to", state.FormInfo.TableName, fmt.Sprintf("\"%s\"", state.FormInfo.DN))
 			for k := range updates {
-				log.Println("Updated:", state.FormInfo.DN, attrNames[k], "->", updates[k])
+				log.Println(attrNames[k], updates[k])
 			}
+
 			reload_model = true
 
 		case tabs.UpdateCmd:
@@ -114,7 +115,7 @@ func main() {
 			}
 			tableIndex = state.TabId
 
-			attrNames, updates := tabs.RunUpdateForm(state.FormInfo)
+			attrNames, updates := tabs.RunUpdateForm(state)
 
 			if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
 				log.Println(err)
