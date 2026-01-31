@@ -48,8 +48,9 @@ type formModel struct {
 	eraseOnEdit      map[int]struct{} // erase default suggestion on edit
 	alwaysRecordEdit bool             // always record entries incl. empty
 
-	focused bool // true when form fields are active else activate msgBox
-	msgBox  ConfirmBoxModel
+	msgBox    ConfirmBoxModel
+	focused   bool // true when form fields are active else activate msgBox
+	updateMsg bool // use uid/cn/ou for msg if true
 
 	viewport viewport.Model
 	ready    bool // for syncing viewport dimensions
@@ -142,7 +143,6 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 
-	// dialog box
 	return m.msgBox.Update(msg)
 }
 
@@ -184,6 +184,7 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if hasUpdates {
 				m.focused = false
+				m.updateConfirmMsg()
 				return m, nil
 			}
 			return m, tea.Quit
@@ -192,6 +193,7 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			} else if !isActiveField && hasUpdates {
 				m.focused = false
+				m.updateConfirmMsg()
 				return m, nil
 			}
 		case "up", "shift+tab":
@@ -217,11 +219,30 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if _, ok := m.active[m.index]; ok {
+	if _, ok := m.active[m.index]; ok || m.recordOnMove {
 		m.inputs[m.index], cmds[m.index] = m.inputs[m.index].Update(msg)
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *formModel) updateConfirmMsg() {
+	if m.updateMsg {
+		// dialog box
+		uid_id := slices.Index(m.inputNames, "uid")
+		cn_id := slices.Index(m.inputNames, "cn")
+		ou_id := slices.Index(m.inputNames, "ou")
+
+		var msgboxMsg string
+		if uid_id > -1 {
+			msgboxMsg = "uid=" + m.inputs[uid_id].Value()
+		} else if cn_id > -1 {
+			msgboxMsg = "cn=" + m.inputs[cn_id].Value()
+		} else if ou_id > -1 {
+			msgboxMsg = "ou" + m.inputs[ou_id].Value()
+		}
+		m.msgBox.message = msgboxMsg
+	}
 }
 
 func (m formModel) View() string {
@@ -395,6 +416,8 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	m.alwaysRecordEdit = true
 	m.eraseOnEdit = eraseOnEdit
 	m.updated = &updates
+	m.msgBox.title = fmt.Sprintf("Adding a new entry to %s", s.FormInfo.TableName)
+	m.updateMsg = true
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	result, err := p.Run()
@@ -431,8 +454,8 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 			log.Println(err)
 			return []string{}, nil
 		}
-
 		s.FormInfo.DN = dn_str
+
 		return attrNames, updates
 	}
 

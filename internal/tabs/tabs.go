@@ -3,6 +3,7 @@ package tabs
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -285,15 +286,11 @@ func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, a
 		}
 	}
 
-	if colId := ldapapi.GetUsersColId("gidNumber"); colId > -1 {
-		for i, tableName := range names {
-			if tableName == "Users" {
-				for _, row := range contents[i].Rows {
-					grpDN, gotCache := api.Cache.Get(fmt.Sprintf("gidNumber=%v", row[colId+1]))
-					if _, grpName, ok := ldapapi.GetFirstDnAttr(grpDN); gotCache && ok {
-						row[colId+1] = fmt.Sprintf("%v(%v)", row[colId+1], grpName)
-					}
-				}
+	if i, colId := slices.Index(names, "Users"), ldapapi.GetUsersColId("gidNumber"); (colId > -1) && (i > -1) {
+		for _, row := range contents[i].Rows {
+			grpDN, gotCache := api.Cache.Get(fmt.Sprintf("gidNumber=%v", row[colId+1]))
+			if _, grpName, ok := ldapapi.GetFirstDnAttr(grpDN); gotCache && ok {
+				row[colId+1] = fmt.Sprintf("%v(%v)", row[colId+1], grpName)
 			}
 		}
 	}
