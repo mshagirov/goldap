@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 
-APP=docker
+if [[ -v CONTAINER_APP ]]; then
+  echo "Using $CONTAINER_APP"
+  APP=$CONTAINER_APP
+elif command -v podman &>/dev/null; then
+  APP=podman
+elif command -v docker &>/dev/null; then
+  APP=docker
+else
+  echo "Could't find podman or docker; please install one before running this script again."
+  exit 1
+fi
+
+echo ""
+echo "Using $APP"
+
 CONTAINER_NAME="goldap-test"
 
 LDAP_ADMIN_DN="cn=admin,dc=goldap,dc=sh"
@@ -8,19 +22,23 @@ LDAP_ADMIN_PASSWORD="admin123"
 
 LDAP_BASE_DN="dc=goldap,dc=sh"
 
-LDAP_URL="ldap://127.0.0.1:389"
+HOST_LDAP_PORT=8389
+HOST_SLDAP_PORT=8636
+LDAP_URL="ldap://127.0.0.1:$HOST_LDAP_PORT"
 
 RUNNING_CONTAINERS=$( $APP ps | grep $CONTAINER_NAME)
 if [ -z "$RUNNING_CONTAINERS" ]; then
   echo "Starting container with $APP"
+  echo -e "------------------------------\n"
+
   $APP \
     run \
     --rm \
     -d \
     --name $CONTAINER_NAME \
     --hostname "${CONTAINER_NAME}.goldap.sh" \
-    -p "127.0.0.1:389:389" \
-    -p "127.0.0.1:636:636" \
+    -p "127.0.0.1:$HOST_LDAP_PORT:389" \
+    -p "127.0.0.1:$HOST_SLDAP_PORT:636" \
     -e LDAP_ORGANISATION="goLDAP TUI" \
     -e LDAP_DOMAIN="goldap.sh" \
     -e LDAP_ADMIN_PASSWORD="${LDAP_ADMIN_PASSWORD}" \
@@ -44,10 +62,14 @@ else
     echo ""
 fi
 
-$APP ps --latest
-
 ldapsearch -H $LDAP_URL \
   -x \
   -b $LDAP_BASE_DN \
   -D $LDAP_ADMIN_DN \
   -w $LDAP_ADMIN_PASSWORD
+
+echo -e "\n+---------------------------------+"
+echo "| LDAP URL: $LDAP_URL |"
+echo -e "+---------------------------------+\n"
+
+$APP ps --filter 'name=goldap-test'
