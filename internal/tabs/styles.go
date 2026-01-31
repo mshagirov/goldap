@@ -29,7 +29,7 @@ var (
 
 	// tables
 	tableHighlightColor  = lipgloss.AdaptiveColor{Light: "#0014a8", Dark: "#265ef7"}
-	tableForegroundColor = lipgloss.AdaptiveColor{Light: "#000000", Dark: "#ffffff"}
+	tableForegroundColor = lipgloss.Color("#ffffff")
 
 	// forms
 	formHeaderStyle    = lipgloss.NewStyle().Foreground(highlightColor).Padding(0, 1).Border(lipgloss.RoundedBorder()).BorderForeground(blurredColor)
