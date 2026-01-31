@@ -101,10 +101,6 @@ func (m ConfirmBoxModel) View() string {
 	buttons := lipgloss.Place(w, 1, lipgloss.Center, lipgloss.Center,
 		cancelBtn+strings.Repeat(" ", buttonSpacing)+confirmBtn,
 	)
-	// strings.Repeat(" ", padding)+
-	// cancelBtn+strings.Repeat(" ", buttonSpacing)+confirmBtn,
-	// +strings.Repeat(" ", padding),
-	// )
 	w = lipgloss.Width(buttons) + 4
 
 	b.WriteString(buttons)
