@@ -72,4 +72,4 @@ echo -e "\n+---------------------------------+"
 echo "| LDAP URL: $LDAP_URL |"
 echo -e "+---------------------------------+\n"
 
-$APP ps --filter 'name=goldap-test'
+$APP ps --filter "name=$CONTAINER_NAME"
