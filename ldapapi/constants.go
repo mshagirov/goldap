@@ -70,7 +70,10 @@ var (
 			{Name: "member"},
 			{Name: "memberUid"},
 		},
-		"OrgUnits": {},
+		"OrgUnits": {
+			{Name: "ou"},
+			{Name: "objectClass", Val: []string{"top", "organizationalUnit"}},
+		},
 	}
 
 	UnknownTableAttributes = []struct {
