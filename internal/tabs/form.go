@@ -416,7 +416,7 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	m.alwaysRecordEdit = true
 	m.eraseOnEdit = eraseOnEdit
 	m.updated = &updates
-	m.msgBox.title = fmt.Sprintf("Adding a new entry to %s", s.FormInfo.TableName)
+	m.msgBox.title = fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName)
 	m.updateMsg = true
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

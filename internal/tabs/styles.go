@@ -42,14 +42,14 @@ var (
 
 	msgBoxStyle = lipgloss.NewStyle().
 			Align(lipgloss.Left).
-			Padding(1, 2).
+			Padding(2).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(blurredColor)
 
 	msgStyle           = lipgloss.NewStyle()
-	msgBlurredBtnStyle = msgStyle.Foreground(blurredColor)
-	msgFocusedBtnStyle = msgStyle.Foreground(highlightColor)
+	msgBlurredBtnStyle = msgStyle.Foreground(blurredColor).Padding(0, 1)
+	msgFocusedBtnStyle = msgStyle.Foreground(highlightColor).Padding(0, 1)
 
-	msgTextStyle  = msgStyle.Foreground(blurredColor).Padding(0, 2)
-	msgTitleStyle = msgStyle.Foreground(blurredColor).Bold(true).PaddingLeft(2)
+	msgTextStyle  = msgStyle.Foreground(blurredColor).Align(lipgloss.Left).Inline(true)
+	msgTitleStyle = msgStyle.Foreground(blurredColor).Bold(true).Inline(true) //.PaddingLeft(2).PaddingRight(2)
 )

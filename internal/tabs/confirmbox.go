@@ -1,7 +1,6 @@
 package tabs
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -16,7 +15,6 @@ type ConfirmBoxModel struct {
 	confirm    bool
 	cancelBtn  string
 	confirmBtn string
-	Width      int
 	Result     MessageBoxResult
 }
 
@@ -27,10 +25,6 @@ const (
 	ResultConfirm
 )
 
-// func NewConfirmSaveBox(message string) ConfirmBoxModel {
-// 	return NewMessageBox("Save changes?", message, "[C]ancel", "[S]ave")
-// }
-
 func (m ConfirmBoxModel) Init() tea.Cmd {
 	return nil
 }
@@ -39,17 +33,14 @@ func (m ConfirmBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		// S/s: Trigger save result
 		case "s", "S":
 			m.Result = ResultConfirm
 			return m, tea.Quit
 
-		// C/c: Trigger cancel result
 		case "c", "C":
 			m.Result = ResultCancel
 			return m, tea.Quit
 
-		// Enter: Activate focused button
 		case "enter":
 			if m.confirm {
 				m.Result = ResultConfirm
@@ -58,17 +49,14 @@ func (m ConfirmBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 
-		// Tab: Navigate to next button
 		case "tab":
 			m.confirm = !m.confirm
 			return m, nil
 
-		// Shift+Tab: Navigate to previous button
 		case "shift+tab":
 			m.confirm = !m.confirm
 			return m, nil
 
-		// Esc: Cancel
 		case "esc":
 			m.Result = ResultCancel
 			return m, tea.Quit
@@ -84,12 +72,15 @@ func (m ConfirmBoxModel) View() string {
 	}
 
 	var b strings.Builder
-
-	b.WriteString(msgTitleStyle.Render(m.title))
-	b.WriteString("\n\n")
-	b.WriteString(msgTextStyle.Render(m.message))
+	title := msgTitleStyle.Height(1).Render(m.title)
+	b.WriteString(title)
 	b.WriteString("\n\n")
 
+	msgtext := msgTextStyle.Height(1).Render(m.message)
+	b.WriteString(msgtext)
+	b.WriteString("\n\n")
+
+	w := max(lipgloss.Width(title), lipgloss.Width(msgtext))
 	cancelStyle := &msgFocusedBtnStyle
 	confirmStyle := &msgBlurredBtnStyle
 	if m.confirm {
@@ -97,11 +88,25 @@ func (m ConfirmBoxModel) View() string {
 		confirmStyle = &msgFocusedBtnStyle
 	}
 
-	buttons := lipgloss.PlaceHorizontal(
-		m.Width,
-		lipgloss.Center,
-		fmt.Sprintf("%s     %s", cancelStyle.Render(m.cancelBtn), confirmStyle.Render(m.confirmBtn)),
+	cancelBtn := cancelStyle.Render(m.cancelBtn)
+	confirmBtn := confirmStyle.Render(m.confirmBtn)
+	buttonSpacing := 5
+	minWidth := lipgloss.Width(cancelBtn) + lipgloss.Width(confirmBtn) + buttonSpacing
+	padding := (w - minWidth) / 2
+	if padding < 0 {
+		w = minWidth
+		padding = 0
+	}
+
+	buttons := lipgloss.Place(w, 1, lipgloss.Center, lipgloss.Center,
+		cancelBtn+strings.Repeat(" ", buttonSpacing)+confirmBtn,
 	)
+	// strings.Repeat(" ", padding)+
+	// cancelBtn+strings.Repeat(" ", buttonSpacing)+confirmBtn,
+	// +strings.Repeat(" ", padding),
+	// )
+	w = lipgloss.Width(buttons) + 4
+
 	b.WriteString(buttons)
 	b.WriteString("\n")
 
@@ -110,7 +115,7 @@ func (m ConfirmBoxModel) View() string {
 		physicalHeight,
 		lipgloss.Center,
 		lipgloss.Center,
-		msgBoxStyle.Render(b.String()),
+		msgBoxStyle.Width(w).Render(b.String()),
 	)
 	return renderedContent
 }
@@ -122,7 +127,6 @@ func NewMessageBox(title, message string) ConfirmBoxModel {
 		confirm:    false,
 		cancelBtn:  "[C]ancel",
 		confirmBtn: "[S]ave",
-		Width:      max(lipgloss.Width(title), lipgloss.Width(message), 20),
 		Result:     ResultConfirm,
 	}
 }
