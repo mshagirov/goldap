@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ -v CONTAINER_APP ]]; then
+if [[ -n "$CONTAINER_APP" ]]; then
   echo "Using $CONTAINER_APP"
   APP=$CONTAINER_APP
 elif command -v podman &>/dev/null; then
