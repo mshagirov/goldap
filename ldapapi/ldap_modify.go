@@ -33,13 +33,13 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 			values = []string{val}
 		case "member":
 			val = strings.TrimRight(val, ValueDelimeter)
-			values, err = uidsStringToDnSlice(val, api)
+			values, err = api.uidsStringToDnSlice(val)
 			if err != nil {
 				return err
 			}
 		case "memberuid":
 			val = strings.TrimRight(val, ValueDelimeter)
-			values, err = uidsVerifyWithDnCache(val, api)
+			values, err = api.uidsVerifyWithDnCache(val)
 			if err != nil {
 				return err
 			}
@@ -56,7 +56,7 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 	return nil
 }
 
-func uidsStringToDnSlice(cleanValueString string, api *LdapApi) ([]string, error) {
+func (api *LdapApi) uidsStringToDnSlice(cleanValueString string) ([]string, error) {
 	values := strings.Split(cleanValueString, ValueDelimeter)
 
 	for k := range values {
@@ -70,7 +70,7 @@ func uidsStringToDnSlice(cleanValueString string, api *LdapApi) ([]string, error
 	return values, nil
 }
 
-func uidsVerifyWithDnCache(cleanValueString string, api *LdapApi) ([]string, error) {
+func (api *LdapApi) uidsVerifyWithDnCache(cleanValueString string) ([]string, error) {
 	values := strings.Split(cleanValueString, ValueDelimeter)
 	for _, uid := range values {
 		_, found := api.Cache.Get(fmt.Sprintf("uid=%s", uid))

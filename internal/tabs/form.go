@@ -45,7 +45,7 @@ type formModel struct {
 	err        error
 
 	recordOnMove     bool             // record before moving to next entry
-	eraseOnEdit      map[int]struct{} // erase default suggestion on edit
+	requiredFields   map[int]struct{} // erase default suggestion on edit
 	alwaysRecordEdit bool             // always record entries incl. empty
 
 	msgBox    ConfirmBoxModel
@@ -63,7 +63,10 @@ type FormInfo struct {
 	Api        *ldapapi.LdapApi
 }
 
-func initialFormModel(title string, attrValues, attrNames []string) formModel {
+func initialFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
+	attrValues, attrNames []string,
+	updated *map[int]string,
+) formModel {
 	var inputs []textinput.Model = make([]textinput.Model, len(attrNames))
 	var inputNames []string = make([]string, len(attrNames))
 	for i := range attrNames {
@@ -88,16 +91,30 @@ func initialFormModel(title string, attrValues, attrNames []string) formModel {
 	inputs[0].Focus()
 
 	return formModel{
-		title:      title,
+		title:      formTitle,
 		inputs:     inputs,
 		inputNames: inputNames,
+		updated:    updated,
 		index:      0,
 		active:     make(map[int]struct{}),
 		err:        nil,
 		focused:    true,
-		msgBox:     NewMessageBox("Save changes for ...", title),
+		msgBox:     NewMessageBox(messageBoxTitle, messageBoxMessage),
 		viewport:   viewport.New(0, 0),
 	}
+}
+
+func InitialAddFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
+	attrValues, attrNames []string,
+	requiredAttributes map[int]struct{},
+	updated *map[int]string,
+) formModel {
+	m := initialFormModel(formTitle, messageBoxTitle, messageBoxMessage, attrValues, attrNames, updated)
+	m.recordOnMove = true
+	m.alwaysRecordEdit = true
+	m.requiredFields = requiredAttributes
+	m.updateMsg = true
+	return m
 }
 
 func (m formModel) Init() tea.Cmd {
@@ -311,7 +328,7 @@ func (m *formModel) startEditing() {
 		return
 	}
 
-	if _, ok := m.eraseOnEdit[m.index]; !ok {
+	if _, ok := m.requiredFields[m.index]; !ok {
 		m.inputs[m.index].SetValue(m.inputs[m.index].Placeholder)
 	}
 }
@@ -351,15 +368,11 @@ func (m *formModel) recordInput() {
 
 func RunUpdateForm(s *State) ([]string, map[int]string) {
 	fi := s.FormInfo
-
-	var updateResult MessageBoxResult
-
 	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
 
-	updates := make(map[int]string)
+	updated := make(map[int]string)
 
-	m := initialFormModel(fi.DN, attrVals, attrNames)
-	m.updated = &updates
+	m := initialFormModel(fi.DN, "Save changes for ...", fi.DN, attrVals, attrNames, &updated)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	result, err := p.Run()
@@ -368,6 +381,7 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 		return []string{}, nil
 	}
 
+	var updateResult MessageBoxResult
 	if msgBox, ok := result.(ConfirmBoxModel); ok {
 		updateResult = msgBox.Result
 	} else {
@@ -375,49 +389,31 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 	}
 	if updateResult == ResultConfirm {
 		// return updates
-		return attrNames, updates
+		return attrNames, updated
 	}
 
 	return []string{}, nil
 }
 
 func RunAddForm(s *State) ([]string, map[int]string) {
-	updates := make(map[int]string)
-	// fi.DN == "" (empty; AUTO GENERATED); if table not user or group allow DN editing
-	// fi.TableName=from	ldapapi.TableNames AUTO GEN use defaults for each table if possible
-	// TableIndex= tab ID:int
-	// Api=ptr to ldapapi.LdapApi
-	// auto: dn, cn
-	// auto: objectClass: top, posixAccount, inetOrgPerson
-	// suggest: homeDirectory
-	// 	DefaultFields
-
-	defaultAttr, ok := ldapapi.DefaultAttributes[s.FormInfo.TableName]
-	if !ok {
-		defaultAttr = ldapapi.UnknownTableAttributes
-	}
-
-	attrNames := make([]string, len(defaultAttr))
-	attrVals := make([]string, len(defaultAttr))
-	for i := range defaultAttr {
-		attrNames[i] = defaultAttr[i].Name
-		attrVals[i] = strings.Join(defaultAttr[i].Val, ldapapi.ValueDelimeter)
-	}
-
-	eraseOnEdit := map[int]struct{}{}
-	if requiredAttr, ok := ldapapi.RequiredAttributes[s.FormInfo.TableName]; ok {
-		for attr := range requiredAttr {
-			eraseOnEdit[slices.Index(attrNames, attr)] = struct{}{}
+	// %%TO-DO : READ CONFIG's defaults and if tableName is missing use ldapapi defaults
+	updated := make(map[int]string)
+	attrNames, attrVals, _ := ldapapi.GetDefaultAttributes(s.FormInfo.TableName)
+	if attrName, nextId, ok := s.FormInfo.Api.GetNextIdNumber(s.FormInfo.TableName); ok {
+		// suggest next uidNumber or gidNumber
+		if i := slices.Index(attrNames, attrName); i > -1 {
+			attrVals[i] = nextId
+		} else {
+			attrNames = append(attrNames, attrName)
+			attrVals = append(attrVals, nextId)
 		}
 	}
+	// %%TO-DO : suggest after loading defaults: homeDirectory
+	requiredAtrr := ldapapi.GetRequiredAttributesSet(attrNames, s.FormInfo.TableName)
 
-	m := initialFormModel(fmt.Sprintf("%s: new entry", s.FormInfo.TableName), attrVals, attrNames)
-	m.recordOnMove = true
-	m.alwaysRecordEdit = true
-	m.eraseOnEdit = eraseOnEdit
-	m.updated = &updates
-	m.msgBox.title = fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName)
-	m.updateMsg = true
+	formTitle := fmt.Sprintf("%s: new entry", s.FormInfo.TableName)
+	msgBoxTitle := fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName)
+	m := InitialAddFormModel(formTitle, msgBoxTitle, "", attrVals, attrNames, requiredAtrr, &updated)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	result, err := p.Run()
@@ -426,7 +422,28 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 		return []string{}, nil
 	}
 
-	// report and confirm entries
+	// %%TO-DO : auto: dn, cn, check objectClass contains required attributes (posixAccount/posixGroup)
+	// all updated;
+	for id, attrName := range attrNames {
+		_, ok := updated[id]
+		_, req := requiredAtrr[id]
+		if req && !ok && !strings.Contains(strings.ToLower(attrName), "member") {
+			log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrName)
+			return []string{}, nil
+		}
+		if !ok && !req {
+			// copy default if not updated (shared attributes)
+			updated[id] = attrVals[id]
+		}
+	}
+
+	dn_str, err := s.FormInfo.Api.ConstructDnFromUpdates(attrNames, updated, s.FormInfo.TableName)
+	if err != nil {
+		log.Println(err)
+		return []string{}, nil
+	}
+	s.FormInfo.DN = dn_str
+
 	var updateResult MessageBoxResult
 	if msgBox, ok := result.(ConfirmBoxModel); ok {
 		updateResult = msgBox.Result
@@ -435,28 +452,7 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	}
 
 	if updateResult == ResultConfirm {
-		// all updated;
-		for id := range attrNames {
-			_, ok := updates[id]
-			_, req := eraseOnEdit[id]
-			if req && !ok {
-				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrNames[id])
-				return []string{}, nil
-			}
-			if !ok && !req {
-				// copy default if not updated (shared attributes)
-				updates[id] = attrVals[id]
-			}
-		}
-
-		dn_str, err := ldapapi.ConstructDnFromUpdates(attrNames, updates, s.FormInfo.Api.Config.LdapBaseDn, s.FormInfo.TableName)
-		if err != nil {
-			log.Println(err)
-			return []string{}, nil
-		}
-		s.FormInfo.DN = dn_str
-
-		return attrNames, updates
+		return attrNames, updated
 	}
 
 	return []string{}, nil

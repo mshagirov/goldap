@@ -44,63 +44,56 @@ var (
 	}
 	OUColsWidth = []int{15, 25, 25}
 
-	DefaultAttributes = map[string][]struct {
-		Name string
-		Val  []string
-	}{
+	DefaultAttributes = map[string][]LdapAttribute{
 		"Users": {
-			{Name: "ou", Val: []string{"People"}},
-			{Name: "objectClass", Val: []string{"posixAccount", "inetOrgPerson", "top"}},
-			{Name: "employeeType", Val: []string{"Staff"}},
-			{Name: "uid", Val: []string{"enter username ..."}},
-			{Name: "givenName", Val: []string{"name ..."}},
-			{Name: "sn", Val: []string{"surname ..."}},
-			{Name: "mail", Val: []string{"user's email ..."}},
-			{Name: "uidNumber", Val: []string{"1234"}},
-			{Name: "gidNumber", Val: []string{"123"}},
-			{Name: "homeDirectory", Val: []string{"path to home folder ..."}},
-			{Name: "userPassword", Val: []string{"password"}},
+			{Name: "ou", Value: []string{"People"}},
+			{Name: "objectClass", Value: []string{"posixAccount", "inetOrgPerson", "top"}},
+			{Name: "employeeType", Value: []string{"Staff"}},
+			{Name: "uid", Value: []string{"USERNAME"}},
+			{Name: "givenName", Value: []string{"NAME"}},
+			{Name: "sn", Value: []string{"SURNAME"}},
+			{Name: "mail", Value: []string{"$UID@goldap.sh"}},
+			{Name: "uidNumber", Value: []string{"1234"}},
+			{Name: "gidNumber", Value: []string{"100"}},
+			{Name: "homeDirectory", Value: []string{"/home/$UID"}},
+			{Name: "userPassword", Value: []string{"password"}},
 			{Name: "description"},
 		},
 		"Groups": {
 			{Name: "ou"},
-			{Name: "objectClass", Val: []string{"top", "posixGroup"}},
-			{Name: "cn", Val: []string{"Group's name"}},
+			{Name: "objectClass", Value: []string{"top", "posixGroup"}},
+			{Name: "cn", Value: []string{"Group's name"}},
 			{Name: "gidNumber"},
-			{Name: "member"},
-			{Name: "memberUid"},
+			{Name: "member", Value: []string{"asimov", "hseldon", "rdolivaw", "..."}},
+			{Name: "memberUid", Value: []string{"asimov", "hseldon", "rdolivaw", "..."}},
 		},
 		"OrgUnits": {
 			{Name: "ou"},
-			{Name: "objectClass", Val: []string{"top", "organizationalUnit"}},
+			{Name: "objectClass", Value: []string{"top", "organizationalUnit"}},
 		},
 	}
 
-	UnknownTableAttributes = []struct {
-		Name string
-		Val  []string
-	}{
-		{Name: "dn", Val: []string{""}},
-		{Name: "ou", Val: []string{""}},
-		{Name: "cn", Val: []string{""}},
-		{Name: "objectClass", Val: []string{"top"}},
-		{Name: "description", Val: []string{""}},
+	UnknownTableAttributes = []LdapAttribute{
+		{Name: "dn", Value: []string{""}},
+		{Name: "ou", Value: []string{""}},
+		{Name: "cn", Value: []string{""}},
+		{Name: "objectClass", Value: []string{"top"}},
+		{Name: "description", Value: []string{""}},
 	}
 
+	// RequiredAttributes members suggestions are erased when updated in Add forms
 	RequiredAttributes = map[string]map[string]struct{}{
 		"Users": {
-			"uid":           {},
-			"givenName":     {},
-			"sn":            {},
-			"mail":          {},
-			"uidNumber":     {},
-			"gidNumber":     {},
-			"homeDirectory": {},
-			"userPassword":  {},
+			"uid":          {},
+			"givenName":    {},
+			"sn":           {},
+			"gidNumber":    {},
+			"userPassword": {},
 		},
 		"Groups": {
 			"cn":        {},
-			"gidNumber": {},
+			"member":    {},
+			"memberUid": {},
 		},
 		"OrgUnits": {
 			"ou": {},

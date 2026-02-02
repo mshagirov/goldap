@@ -2,6 +2,8 @@ package ldapapi
 
 import (
 	"fmt"
+	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
@@ -34,6 +36,23 @@ func (api *LdapApi) Search(filter string) (*ldap.SearchResult, error) {
 	return res, err
 }
 
+func getFirstMissingInt(nums []int) int {
+	slices.Sort(nums)
+	missing := nums[0] + 1 // candidate
+	for _, n := range nums {
+		if n < missing {
+			continue
+		}
+		if n == missing {
+			missing++
+		}
+		if n > missing {
+			return missing
+		}
+	}
+	return missing
+}
+
 func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
 	r, err := api.Search(TableFilters["Users"])
 	if err != nil {
@@ -41,11 +60,16 @@ func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
 	}
 
 	var uid string
-	for _, entry := range r.Entries {
+	uidNumbers := make([]int, len(r.Entries))
+	for i, entry := range r.Entries {
 		uid = entry.GetAttributeValue("uid")
-		// record uid:dn map
+		uidNumber := strings.TrimSpace(entry.GetAttributeValue("uidNumber"))
+		uidNumbers[i], _ = strconv.Atoi(uidNumber)
 		api.Cache.Add(fmt.Sprintf("uid=%v", uid), entry.DN)
 	}
+
+	api.Cache.Add("nextUidNumber", strconv.Itoa(getFirstMissingInt(uidNumbers)))
+
 	return r, err
 }
 
@@ -56,11 +80,14 @@ func (api *LdapApi) ListGroups() (*ldap.SearchResult, error) {
 	}
 
 	var gidNumber string
-	for _, entry := range r.Entries {
-		// record gidNumer=*:gid (group name) map
-		gidNumber = entry.GetAttributeValue("gidNumber")
+	gidNumbers := make([]int, len(r.Entries))
+	for i, entry := range r.Entries {
+		gidNumber = strings.TrimSpace(entry.GetAttributeValue("gidNumber"))
+		gidNumbers[i], _ = strconv.Atoi(gidNumber)
 		api.Cache.Add(fmt.Sprintf("gidNumber=%v", gidNumber), entry.DN)
 	}
+	nextAvailableId := strconv.Itoa(getFirstMissingInt(gidNumbers))
+	api.Cache.Add("nextGidNumber", nextAvailableId)
 	return r, err
 }
 
