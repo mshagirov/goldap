@@ -3,6 +3,7 @@ package tabs
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -47,6 +48,7 @@ type formModel struct {
 	recordOnMove     bool             // record before moving to next entry
 	requiredFields   map[int]struct{} // erase default suggestion on edit
 	alwaysRecordEdit bool             // always record entries incl. empty
+	useTemplates     bool             // format not updated fields based on templates
 
 	msgBox    ConfirmBoxModel
 	focused   bool // true when form fields are active else activate msgBox
@@ -113,6 +115,7 @@ func InitialAddFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
 	m.recordOnMove = true
 	m.alwaysRecordEdit = true
 	m.requiredFields = requiredAttributes
+	m.useTemplates = true
 	m.updateMsg = true
 	return m
 }
@@ -201,6 +204,7 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if hasUpdates {
 				m.focused = false
+				m.recordTemplateValues()
 				m.updateConfirmMsg()
 				return m, nil
 			}
@@ -210,6 +214,7 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			} else if !isActiveField && hasUpdates {
 				m.focused = false
+				m.recordTemplateValues()
 				m.updateConfirmMsg()
 				return m, nil
 			}
@@ -240,7 +245,41 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.inputs[m.index], cmds[m.index] = m.inputs[m.index].Update(msg)
 	}
 
+	if m.useTemplates {
+		m.updateTemplates()
+	}
+
 	return m, tea.Batch(cmds...)
+}
+
+func (m *formModel) updateTemplates() {
+	for i, val := range m.inputs {
+		if _, ok := (*m.updated)[i]; ok {
+			continue
+		}
+		template := val.Placeholder
+		re := regexp.MustCompile(`\{\{(.*?)\}\}`)
+		firstMatch := re.FindStringSubmatch(template)
+
+		srcId := -1
+		if len(firstMatch) > 1 {
+			srcId = slices.Index(m.inputNames, strings.ToLower(firstMatch[1]))
+		}
+		if srcId > -1 {
+			m.inputs[i].SetValue(strings.ReplaceAll(template, "{{"+firstMatch[1]+"}}", m.inputs[srcId].Value()))
+		}
+	}
+}
+
+func (m *formModel) recordTemplateValues() {
+	for i, input := range m.inputs {
+		if _, ok := (*m.updated)[i]; ok {
+			continue
+		}
+		if val := input.Value(); len(val) > 0 {
+			(*m.updated)[i] = val
+		}
+	}
 }
 
 func (m *formModel) updateConfirmMsg() {
@@ -414,6 +453,7 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	formTitle := fmt.Sprintf("%s: new entry", s.FormInfo.TableName)
 	msgBoxTitle := fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName)
 	m := InitialAddFormModel(formTitle, msgBoxTitle, "", attrVals, attrNames, requiredAtrr, &updated)
+	m.updateTemplates()
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	result, err := p.Run()
