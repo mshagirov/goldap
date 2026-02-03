@@ -66,10 +66,12 @@ var (
 			{Name: "gidNumber"},
 			{Name: "member", Value: []string{"asimov", "hseldon", "rdolivaw", "..."}},
 			{Name: "memberUid", Value: []string{"asimov", "hseldon", "rdolivaw", "..."}},
+			{Name: "description"},
 		},
 		"OrgUnits": {
 			{Name: "ou"},
 			{Name: "objectClass", Value: []string{"top", "organizationalUnit"}},
+			{Name: "description"},
 		},
 	}
 

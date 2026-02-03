@@ -11,16 +11,16 @@ type Config struct {
 	LdapBaseDn  string `json:"LDAP_BASE_DN"`
 	LdapAdminDn string `json:"LDAP_ADMIN_DN"`
 	Users       []struct {
-		Name string   `json:"Name"`
-		Val  []string `json:"Val"`
+		Name  string   `json:"Name"`
+		Value []string `json:"Value"`
 	} `json:"Users"`
 	Groups []struct {
-		Name string   `json:"Name"`
-		Val  []string `json:"Val"`
+		Name  string   `json:"Name"`
+		Value []string `json:"Value"`
 	} `json:"Groups"`
 	OrgUnits []struct {
-		Name string   `json:"Name"`
-		Val  []string `json:"Val"`
+		Name  string   `json:"Name"`
+		Value []string `json:"Value"`
 	} `json:"OrgUnits"`
 }
 
@@ -32,25 +32,6 @@ func getConfigPath() (string, error) {
 		return "", fmt.Errorf("Error getting config path: %v", err)
 	}
 	return HomeDir + "/" + fileName, nil
-}
-
-func ExampleJson() string {
-	configPath, err := getConfigPath()
-	if err != nil {
-		fmt.Println(err)
-	}
-	exampleJson := `{
-  "LDAP_URL":"ldap://localhost:389",
-  "LDAP_BASE_DN":"dc=goldap,dc=sh",
-  "LDAP_ADMIN_DN":"cn=admin,dc=goldap,dc=sh"
-}`
-	return fmt.Sprintf(`goldap config: LdapUrl is empty
-
-Create a JSON configuration file in:
-  %s
-Example configuration file contents:
-%s
-`, configPath, exampleJson)
 }
 
 func write(c Config) error {
