@@ -59,10 +59,12 @@ func main() {
 			tableIndex = state.TabId
 			attrNames, updates := tabs.RunAddForm(state)
 			if updates != nil {
-				log.Println("Added entry to", state.FormInfo.TableName, fmt.Sprintf("\"%s\"", state.FormInfo.DN))
-				for k := range updates {
-					log.Println(attrNames[k], updates[k])
+				if err := LdapApi.AddEntry(state.FormInfo.DN, attrNames, updates); err != nil {
+					log.Println(err)
+				} else {
+					log.Println("Added:", state.FormInfo.DN, "to", state.FormInfo.TableName)
 				}
+
 				reload_model = true
 			}
 		case tabs.UpdateCmd:
@@ -82,6 +84,5 @@ func main() {
 			}
 			reload_model = true
 		}
-		state.Cmd = tabs.QuitCmd
 	}
 }

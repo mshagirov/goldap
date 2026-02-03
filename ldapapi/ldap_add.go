@@ -7,7 +7,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
-func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string) error {
+func (api *LdapApi) AddEntry(dn string, attr []string, updates map[int]string) error {
 	l, err := ldap.DialURL(api.Config.LdapUrl)
 	if err != nil {
 		return fmt.Errorf("DialURL Error; %v", err)
@@ -18,7 +18,7 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 		return fmt.Errorf("Bind Error; %v", err)
 	}
 
-	modReq := ldap.NewModifyRequest(dn, []ldap.Control{})
+	addReq := ldap.NewAddRequest(dn, []ldap.Control{})
 
 	var values []string
 
@@ -43,40 +43,17 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 			if err != nil {
 				return err
 			}
+		case "dn", "ou", "dc":
+			continue
 		default:
 			val = strings.Trim(val, ValueDelimeter)
 			values = strings.Split(val, ValueDelimeter)
 		}
-		modReq.Replace(attr_name, values)
+		addReq.Attribute(attr_name, values)
 	}
 
-	if err = l.Modify(modReq); err != nil {
-		return fmt.Errorf("Modify request error; %v", err)
+	if err = l.Add(addReq); err != nil {
+		return fmt.Errorf("Add request error; %v", err)
 	}
 	return nil
-}
-
-func (api *LdapApi) uidsStringToDnSlice(cleanValueString string) ([]string, error) {
-	values := strings.Split(cleanValueString, ValueDelimeter)
-
-	for k := range values {
-		dn, found := api.Cache.Get(fmt.Sprintf("uid=%s", values[k]))
-		if found {
-			values[k] = dn
-		} else {
-			return []string{}, fmt.Errorf("Group member update: uid=%s not found", values[k])
-		}
-	}
-	return values, nil
-}
-
-func (api *LdapApi) uidsVerifyWithDnCache(cleanValueString string) ([]string, error) {
-	values := strings.Split(cleanValueString, ValueDelimeter)
-	for _, uid := range values {
-		_, found := api.Cache.Get(fmt.Sprintf("uid=%s", uid))
-		if !found {
-			return []string{}, fmt.Errorf("Group memberUid update: uid=%s not found", uid)
-		}
-	}
-	return values, nil
 }

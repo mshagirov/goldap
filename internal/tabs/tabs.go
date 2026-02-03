@@ -166,6 +166,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if insearch && msg.String() != "q" {
 				return m.stopSearch()
 			} else if !searchFocus {
+				m.State.Cmd = QuitCmd
 				return m, tea.Quit
 			}
 		case "esc":
