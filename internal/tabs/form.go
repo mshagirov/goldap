@@ -450,7 +450,7 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 }
 
 func RunAddForm(s *State) ([]string, map[int]string) {
-	// %%TO-DO : READ CONFIG's defaults and if tableName is missing use ldapapi defaults
+	// TODO: READ CONFIG's defaults and if tableName is missing use ldapapi defaults
 	// cfg.Users = []struct{Name Value}
 	// cfg.Groups = []struct{Name, Value}
 	// cfg.OrgUnits = []struct{Name, Value}
@@ -495,6 +495,10 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 				return []string{}, nil
 			}
 			//	TODO: check objectClass contains required attributes (posixAccount/posixGroup/organizationalUnit)
+		}
+		if err := s.FormInfo.Api.UpdateHasRequiredObjectClass(attrNames, updated, s.FormInfo.TableName); err != nil {
+			log.Println(err)
+			return []string{}, nil
 		}
 		dn_str, err := s.FormInfo.Api.ConstructDnFromUpdates(attrNames, updated, s.FormInfo.TableName)
 		if err != nil {

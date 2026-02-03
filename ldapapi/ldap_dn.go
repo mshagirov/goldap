@@ -61,3 +61,28 @@ func (api *LdapApi) AppendCnIfUserForm(attrNames *[]string, updates *map[int]str
 
 	return nil
 }
+
+func (api *LdapApi) UpdateHasRequiredObjectClass(attrNames []string, updates map[int]string, tableName string) error {
+	attrs, ok := updates[slices.Index(attrNames, "objectClass")]
+	if !ok {
+		return fmt.Errorf("*LdapApi.UpdateHasRequiredObjectClass: 'objectClass' is missing")
+	}
+	attrs = strings.Trim(attrs, ValueDelimeter)
+	values := strings.Split(attrs, ValueDelimeter)
+	required := "?(unknown entry type)"
+	switch tableName {
+	case "Users":
+		required = "posixAccount"
+	case "Groups":
+		required = "posixGroup"
+	case "OrgUnits":
+		required = "organizationalUnit"
+	}
+	for _, val := range values {
+		if strings.Contains(val, required) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("*LdapApi.UpdateHasRequiredObjectClass: %s entry 'objectClass' doesn't contain required value '%s'", tableName, required)
+}
