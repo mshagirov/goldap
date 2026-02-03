@@ -451,6 +451,10 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 
 func RunAddForm(s *State) ([]string, map[int]string) {
 	// %%TO-DO : READ CONFIG's defaults and if tableName is missing use ldapapi defaults
+	// cfg.Users = []struct{Name Value}
+	// cfg.Groups = []struct{Name, Value}
+	// cfg.OrgUnits = []struct{Name, Value}
+
 	updated := make(map[int]string)
 	attrNames, attrVals, _ := ldapapi.GetDefaultAttributes(s.FormInfo.TableName)
 	if attrName, nextId, ok := s.FormInfo.Api.GetNextIdNumber(s.FormInfo.TableName); ok {
@@ -475,8 +479,6 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 		return []string{}, nil
 	}
 
-	// %%TO-DO : auto: dn, cn, check objectClass contains required attributes (posixAccount/posixGroup)
-
 	var updateResult MessageBoxResult
 	if msgBox, ok := result.(ConfirmBoxModel); ok {
 		updateResult = msgBox.Result
@@ -485,6 +487,15 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	}
 
 	if updateResult == ResultConfirm {
+		for id, attrName := range attrNames {
+			_, ok := updated[id]
+			_, req := requiredAtrr[id]
+			if req && !ok && !strings.Contains(strings.ToLower(attrName), "member") {
+				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrName)
+				return []string{}, nil
+			}
+			//	TODO: check objectClass contains required attributes (posixAccount/posixGroup/organizationalUnit)
+		}
 		dn_str, err := s.FormInfo.Api.ConstructDnFromUpdates(attrNames, updated, s.FormInfo.TableName)
 		if err != nil {
 			log.Println(err)
@@ -493,13 +504,9 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 			s.FormInfo.DN = dn_str
 		}
 
-		for id, attrName := range attrNames {
-			_, ok := updated[id]
-			_, req := requiredAtrr[id]
-			if req && !ok && !strings.Contains(strings.ToLower(attrName), "member") {
-				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrName)
-				return []string{}, nil
-			}
+		if err := s.FormInfo.Api.AppendCnIfUserForm(&attrNames, &updated, s.FormInfo.TableName); err != nil {
+			log.Println(err)
+			return []string{}, nil
 		}
 
 		return attrNames, updated

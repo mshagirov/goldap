@@ -36,3 +36,28 @@ func (api *LdapApi) ConstructDnFromUpdates(attrNames []string, updates map[int]s
 
 	return dn_str, nil
 }
+
+func (api *LdapApi) AppendCnIfUserForm(attrNames *[]string, updates *map[int]string, tableName string) error {
+	if tableName == "Users" {
+
+		givenName, nameOk := (*updates)[slices.Index(*attrNames, "givenName")]
+		if !nameOk {
+			givenName = ""
+		}
+
+		sn, snOk := (*updates)[slices.Index(*attrNames, "sn")]
+		if !snOk {
+			sn = ""
+		}
+
+		if !nameOk && !snOk {
+			return fmt.Errorf("Either one or both \"givenName\" and \"sn\" are missing!")
+		}
+
+		cn := fmt.Sprintf("%s %s", strings.TrimSpace(givenName), strings.TrimSpace(sn))
+		*attrNames = append(*attrNames, "cn")
+		(*updates)[len(*attrNames)-1] = cn
+	}
+
+	return nil
+}
