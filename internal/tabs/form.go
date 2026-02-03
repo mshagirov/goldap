@@ -117,6 +117,9 @@ func InitialAddFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
 	m.requiredFields = requiredAttributes
 	m.useTemplates = true
 	m.updateMsg = true
+	m.inputDefaultValues()
+	m.updateTemplates()
+
 	return m
 }
 
@@ -268,6 +271,18 @@ func (m *formModel) updateTemplates() {
 		if srcId > -1 {
 			m.inputs[i].SetValue(strings.ReplaceAll(template, "{{"+firstMatch[1]+"}}", m.inputs[srcId].Value()))
 		}
+	}
+}
+
+func (m *formModel) inputDefaultValues() {
+	for i := range m.inputs {
+		if strings.Contains(strings.ToLower(m.inputNames[i]), "password") {
+			continue
+		}
+		if _, ok := m.requiredFields[i]; ok {
+			continue
+		}
+		m.inputs[i].SetValue(m.inputs[i].Placeholder)
 	}
 }
 
@@ -439,7 +454,6 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	updated := make(map[int]string)
 	attrNames, attrVals, _ := ldapapi.GetDefaultAttributes(s.FormInfo.TableName)
 	if attrName, nextId, ok := s.FormInfo.Api.GetNextIdNumber(s.FormInfo.TableName); ok {
-		// suggest next uidNumber or gidNumber
 		if i := slices.Index(attrNames, attrName); i > -1 {
 			attrVals[i] = nextId
 		} else {
@@ -447,13 +461,12 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 			attrVals = append(attrVals, nextId)
 		}
 	}
-	// %%TO-DO : suggest after loading defaults: homeDirectory
 	requiredAtrr := ldapapi.GetRequiredAttributesSet(attrNames, s.FormInfo.TableName)
 
-	formTitle := fmt.Sprintf("%s: new entry", s.FormInfo.TableName)
-	msgBoxTitle := fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName)
-	m := InitialAddFormModel(formTitle, msgBoxTitle, "", attrVals, attrNames, requiredAtrr, &updated)
-	m.updateTemplates()
+	m := InitialAddFormModel(
+		fmt.Sprintf("%s: new entry", s.FormInfo.TableName),
+		fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName),
+		"", attrVals, attrNames, requiredAtrr, &updated)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	result, err := p.Run()
@@ -463,26 +476,6 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	}
 
 	// %%TO-DO : auto: dn, cn, check objectClass contains required attributes (posixAccount/posixGroup)
-	// all updated;
-	for id, attrName := range attrNames {
-		_, ok := updated[id]
-		_, req := requiredAtrr[id]
-		if req && !ok && !strings.Contains(strings.ToLower(attrName), "member") {
-			log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrName)
-			return []string{}, nil
-		}
-		if !ok && !req {
-			// copy default if not updated (shared attributes)
-			updated[id] = attrVals[id]
-		}
-	}
-
-	dn_str, err := s.FormInfo.Api.ConstructDnFromUpdates(attrNames, updated, s.FormInfo.TableName)
-	if err != nil {
-		log.Println(err)
-		return []string{}, nil
-	}
-	s.FormInfo.DN = dn_str
 
 	var updateResult MessageBoxResult
 	if msgBox, ok := result.(ConfirmBoxModel); ok {
@@ -492,6 +485,23 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 	}
 
 	if updateResult == ResultConfirm {
+		dn_str, err := s.FormInfo.Api.ConstructDnFromUpdates(attrNames, updated, s.FormInfo.TableName)
+		if err != nil {
+			log.Println(err)
+			return []string{}, nil
+		} else {
+			s.FormInfo.DN = dn_str
+		}
+
+		for id, attrName := range attrNames {
+			_, ok := updated[id]
+			_, req := requiredAtrr[id]
+			if req && !ok && !strings.Contains(strings.ToLower(attrName), "member") {
+				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrName)
+				return []string{}, nil
+			}
+		}
+
 		return attrNames, updated
 	}
 
