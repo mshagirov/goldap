@@ -263,10 +263,9 @@ func (m *formModel) updateTemplates() {
 		template := val.Placeholder
 		re := regexp.MustCompile(`\{\{(.*?)\}\}`)
 		firstMatch := re.FindStringSubmatch(template)
-
 		srcId := -1
 		if len(firstMatch) > 1 {
-			srcId = slices.Index(m.inputNames, strings.ToLower(firstMatch[1]))
+			srcId = slices.Index(m.inputNames, firstMatch[1])
 		}
 		if srcId > -1 {
 			m.inputs[i].SetValue(strings.ReplaceAll(template, "{{"+firstMatch[1]+"}}", m.inputs[srcId].Value()))
@@ -450,13 +449,10 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 }
 
 func RunAddForm(s *State) ([]string, map[int]string) {
-	// TODO: READ CONFIG's defaults and if tableName is missing use ldapapi defaults
-	// cfg.Users = []struct{Name Value}
-	// cfg.Groups = []struct{Name, Value}
-	// cfg.OrgUnits = []struct{Name, Value}
-
 	updated := make(map[int]string)
-	attrNames, attrVals, _ := ldapapi.GetDefaultAttributes(s.FormInfo.TableName)
+
+	attrNames, attrVals, _ := s.FormInfo.Api.GetNewEntryAttributes(s.FormInfo.TableName)
+
 	if attrName, nextId, ok := s.FormInfo.Api.GetNextIdNumber(s.FormInfo.TableName); ok {
 		if i := slices.Index(attrNames, attrName); i > -1 {
 			attrVals[i] = nextId
@@ -465,12 +461,14 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 			attrVals = append(attrVals, nextId)
 		}
 	}
+
 	requiredAtrr := ldapapi.GetRequiredAttributesSet(attrNames, s.FormInfo.TableName)
 
 	m := InitialAddFormModel(
 		fmt.Sprintf("%s: new entry", s.FormInfo.TableName),
 		fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName),
 		"", attrVals, attrNames, requiredAtrr, &updated)
+
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	result, err := p.Run()
@@ -491,15 +489,16 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 			_, ok := updated[id]
 			_, req := requiredAtrr[id]
 			if req && !ok && !strings.Contains(strings.ToLower(attrName), "member") {
-				log.Printf("Error when ADDING new entry to \"%v\": missing required attribute \"%v\"", s.FormInfo.TableName, attrName)
+				log.Printf("Error: missing '%v' for adding new entry to '%v'", s.FormInfo.TableName, attrName)
 				return []string{}, nil
 			}
-			//	TODO: check objectClass contains required attributes (posixAccount/posixGroup/organizationalUnit)
 		}
+
 		if err := s.FormInfo.Api.UpdateHasRequiredObjectClass(attrNames, updated, s.FormInfo.TableName); err != nil {
 			log.Println(err)
 			return []string{}, nil
 		}
+
 		dn_str, err := s.FormInfo.Api.ConstructDnFromUpdates(attrNames, updated, s.FormInfo.TableName)
 		if err != nil {
 			log.Println(err)

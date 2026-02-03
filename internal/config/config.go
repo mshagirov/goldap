@@ -6,25 +6,21 @@ import (
 	"os"
 )
 
-type Config struct {
-	LdapUrl     string `json:"LDAP_URL"`
-	LdapBaseDn  string `json:"LDAP_BASE_DN"`
-	LdapAdminDn string `json:"LDAP_ADMIN_DN"`
-	Users       []struct {
-		Name  string   `json:"Name"`
-		Value []string `json:"Value"`
-	} `json:"Users"`
-	Groups []struct {
-		Name  string   `json:"Name"`
-		Value []string `json:"Value"`
-	} `json:"Groups"`
-	OrgUnits []struct {
-		Name  string   `json:"Name"`
-		Value []string `json:"Value"`
-	} `json:"OrgUnits"`
+const fileName = ".goldapconfig.json"
+
+type LdapAttribute struct {
+	Name  string   `json:"Name"`
+	Value []string `json:"Value"`
 }
 
-const fileName = ".goldapconfig.json"
+type Config struct {
+	LdapUrl     string          `json:"LDAP_URL"`
+	LdapBaseDn  string          `json:"LDAP_BASE_DN"`
+	LdapAdminDn string          `json:"LDAP_ADMIN_DN"`
+	Users       []LdapAttribute `json:"Users"`
+	Groups      []LdapAttribute `json:"Groups"`
+	OrgUnits    []LdapAttribute `json:"OrgUnits"`
+}
 
 func getConfigPath() (string, error) {
 	HomeDir, err := os.UserHomeDir()
@@ -87,4 +83,17 @@ func (c Config) SetlAdminDn(adminDn string) error {
 		return fmt.Errorf("Error writing config; %v", err)
 	}
 	return nil
+}
+
+func (c *Config) GetLdapAttributes(name string) ([]LdapAttribute, bool) {
+	switch name {
+	case "Users":
+		return c.Users, true
+	case "Groups":
+		return c.Groups, true
+	case "OrgUnits":
+		return c.OrgUnits, true
+	default:
+		return []LdapAttribute{}, false
+	}
 }
