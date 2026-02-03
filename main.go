@@ -50,46 +50,24 @@ func main() {
 	}
 
 	var (
-		contents     []ldapapi.TableInfo
-		dn           [][]string
 		reload_model = false
 		tableIndex   = 0
 		rowIndices   = make([]int, len(ldapapi.TableNames))
+		m            = createNewTabsModel(tableIndex, rowIndices, LdapApi)
 	)
 
 	for true {
-		LdapApi.Cache.Clear()
-		contents = make([]ldapapi.TableInfo, 0)
-		dn = make([][]string, 0)
-
-		for _, tabName := range ldapapi.TableNames {
-			t, err := LdapApi.GetTableInfo(tabName)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			contents = append(contents, t)
-			dn = append(dn, t.DN)
-		}
-
-		m := tabs.NewTabsModel(ldapapi.TableNames, contents, dn, LdapApi)
-
 		if reload_model {
-			m.State.TabId = tableIndex
-			m.State.Table = tabs.NewTable(contents[tableIndex])
-			for i, rowId := range rowIndices {
-				m.State.TabSates[i].Cursor = min(len(dn[i]), rowId)
-			}
-			m.SetTable()
-
+			LdapApi.Cache.Clear()
+			m = createNewTabsModel(tableIndex, rowIndices, LdapApi)
 			reload_model = false
 		}
 
 		state := tabs.RunTabs(m)
+
 		switch state.Cmd {
 		case tabs.QuitCmd:
 			return
-
 		case tabs.AddCmd:
 			state.FormInfo.Api = LdapApi
 			state.FormInfo.DN = cfg.LdapBaseDn
@@ -97,24 +75,20 @@ func main() {
 				rowIndices[i] = m.State.TabSates[i].Cursor
 			}
 			tableIndex = state.TabId
-
 			attrNames, updates := tabs.RunAddForm(state)
-
-			log.Println("Added entry to", state.FormInfo.TableName, fmt.Sprintf("\"%s\"", state.FormInfo.DN))
-			for k := range updates {
-				log.Println(attrNames[k], updates[k])
+			if updates != nil {
+				log.Println("Added entry to", state.FormInfo.TableName, fmt.Sprintf("\"%s\"", state.FormInfo.DN))
+				for k := range updates {
+					log.Println(attrNames[k], updates[k])
+				}
+				reload_model = true
 			}
-
-			reload_model = true
-
 		case tabs.UpdateCmd:
 			state.FormInfo.Api = LdapApi
-
 			for i := range rowIndices {
 				rowIndices[i] = m.State.TabSates[i].Cursor
 			}
 			tableIndex = state.TabId
-
 			attrNames, updates := tabs.RunUpdateForm(state)
 
 			if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
@@ -125,7 +99,7 @@ func main() {
 				}
 			}
 			reload_model = true
-
 		}
+		state.Cmd = tabs.QuitCmd
 	}
 }
