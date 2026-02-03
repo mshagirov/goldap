@@ -19,24 +19,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// fmt.Println("Users: ", len(cfg.Users), " attributes {")
-	// for _, attr := range cfg.Users {
-	// 	fmt.Printf("%15v : %20v\n", attr.Name, attr.Val)
-	// }
-	// fmt.Println("}")
-	//
-	// fmt.Println("Groups: ", len(cfg.Groups), " attributes {")
-	// for _, attr := range cfg.Groups {
-	// 	fmt.Printf("%15v : %20v\n", attr.Name, attr.Val)
-	// }
-	// fmt.Println("}")
-	//
-	// fmt.Println("OrgUnits: ", len(cfg.OrgUnits), " attributes {")
-	// for _, attr := range cfg.OrgUnits {
-	// 	fmt.Printf("%15v : %20v\n", attr.Name, attr.Val)
-	// }
-	// fmt.Println("}")
-
 	secret, err := login.Run()
 	if err != nil {
 		fmt.Println(err)
