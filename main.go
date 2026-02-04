@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/mshagirov/goldap/internal/cache"
@@ -32,6 +31,8 @@ func main() {
 	}
 
 	var (
+		SUCCESS_MSG  = "Success【✓】"
+		FAILURE_MSG  = "Failure【✗】"
 		reload_model = false
 		tableIndex   = 0
 		rowIndices   = make([]int, len(ldapapi.TableNames))
@@ -58,23 +59,15 @@ func main() {
 			}
 			tableIndex = state.TabId
 			attrNames, updates := tabs.RunAddForm(state)
-			if updates != nil {
-				title := "Add Entry"
-				message := fmt.Sprintf("Add %s to %s?", state.FormInfo.DN, state.FormInfo.TableName)
-				if tabs.RunConfirmBox(title, message) == tabs.ResultConfirm {
-					if err := LdapApi.AddEntry(state.FormInfo.DN, attrNames, updates); err != nil {
-						title = "Add Failed"
-						message = fmt.Sprintf("Failed to add entry to '%v': %v", state.FormInfo.TableName, err)
-						tabs.RunMessageBox(title, message)
-						log.Println(err)
-					} else {
-						title = "Add Successful"
-						message = fmt.Sprintf("Successfully added %s to %s", state.FormInfo.DN, state.FormInfo.TableName)
-						tabs.RunMessageBox(title, message)
-					}
-
-					reload_model = true
+			if len(updates) > 0 {
+				if err := LdapApi.AddEntry(state.FormInfo.DN, attrNames, updates); err != nil {
+					tabs.RunMessageBox(FAILURE_MSG,
+						fmt.Sprintf("Failed to add entry to '%v': %v", state.FormInfo.TableName, err))
+				} else {
+					tabs.RunMessageBox(SUCCESS_MSG,
+						fmt.Sprintf("Successfully added %s to %s", state.FormInfo.DN, state.FormInfo.TableName))
 				}
+				reload_model = true
 			}
 		case tabs.UpdateCmd:
 			state.FormInfo.Api = LdapApi
@@ -84,22 +77,29 @@ func main() {
 			tableIndex = state.TabId
 			attrNames, updates := tabs.RunUpdateForm(state)
 
-			title := "Update Entry"
-			message := fmt.Sprintf("Update %s?", state.FormInfo.DN)
-			if tabs.RunConfirmBox(title, message) == tabs.ResultConfirm {
+			if len(updates) > 0 {
 				if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
-					title = "Update Failed"
-					message = fmt.Sprintf("Failed to update entry: %v", err)
-					tabs.RunMessageBox(title, message)
-					log.Println(err)
-
+					tabs.RunMessageBox(FAILURE_MSG,
+						fmt.Sprintf("Failed to update entry: %v", err))
 				} else {
-					title = "Update Successful"
-					message = fmt.Sprintf("Successfully updated %s", state.FormInfo.DN)
-					tabs.RunMessageBox(title, message)
+					tabs.RunMessageBox(SUCCESS_MSG,
+						fmt.Sprintf("Successfully updated %s", state.FormInfo.DN))
 				}
+				reload_model = true
 			}
-			reload_model = true
+		case tabs.DeleteCmd:
+			title := "Deleting Entry"
+			message := fmt.Sprintf("Delete LDAP entry: '%s'?", state.FormInfo.DN)
+			if tabs.RunConfirmBox(title, message) == tabs.ResultConfirm {
+				if err := LdapApi.DeleteEntry(state.FormInfo.DN); err != nil {
+					tabs.RunMessageBox(FAILURE_MSG,
+						fmt.Sprintf("Failed to delete entry from '%v': %v", state.FormInfo.TableName, err))
+				} else {
+					tabs.RunMessageBox(SUCCESS_MSG,
+						fmt.Sprintf("Successfully deleted %s", state.FormInfo.DN))
+				}
+				reload_model = true
+			}
 		}
 	}
 }

@@ -28,7 +28,7 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 		case "userpassword":
 			val, err = HashPasswordSSHA(val, 4)
 			if err != nil {
-				return fmt.Errorf("Error hashing password; %v", err)
+				return fmt.Errorf("SSHA error: %v", err)
 			}
 			values = []string{val}
 		case "member":
@@ -51,7 +51,7 @@ func (api *LdapApi) ModifyAttr(dn string, attr []string, updates map[int]string)
 	}
 
 	if err = l.Modify(modReq); err != nil {
-		return fmt.Errorf("Modify request error; %v", err)
+		return err
 	}
 	return nil
 }

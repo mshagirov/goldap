@@ -52,20 +52,18 @@ func (m MessageBoxModel) View() string {
 	b.WriteString("\n\n")
 
 	w := max(lipgloss.Width(title), lipgloss.Width(msgtext))
-	confirmStyle := &msgFocusedBtnStyle
 
-	confirmBtn := confirmStyle.Render(m.confirmBtn)
-	minWidth := lipgloss.Width(confirmBtn)
+	footerTxt := msgBlurredBtnStyle.Render(messageFooter)
+	minWidth := lipgloss.Width(footerTxt)
 	if ((w - minWidth) / 2) < 0 {
 		w = minWidth
 	}
 
-	buttons := lipgloss.Place(w, 1, lipgloss.Center, lipgloss.Center, confirmBtn)
-	w = lipgloss.Width(buttons) + 4
+	rendered_footer := lipgloss.Place(w, 1, lipgloss.Center, lipgloss.Center, footerTxt)
+	w = lipgloss.Width(rendered_footer) + 4
 
-	b.WriteString(buttons)
+	b.WriteString(rendered_footer)
 	b.WriteString("\n")
-	b.WriteString(formFooterStyle.Render(messageFooter))
 
 	renderedContent := lipgloss.Place(
 		physicalWidth,

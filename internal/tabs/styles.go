@@ -51,5 +51,5 @@ var (
 	msgFocusedBtnStyle = msgStyle.Foreground(highlightColor).Padding(0, 1)
 
 	msgTextStyle  = msgStyle.Foreground(blurredColor).Align(lipgloss.Left).Inline(true)
-	msgTitleStyle = msgStyle.Foreground(blurredColor).Bold(true).Inline(true) //.PaddingLeft(2).PaddingRight(2)
+	msgTitleStyle = msgStyle.Foreground(highlightColor).Bold(true).Inline(true) //.PaddingLeft(2).PaddingRight(2)
 )
