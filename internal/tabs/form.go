@@ -101,7 +101,7 @@ func initialFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
 		active:     make(map[int]struct{}),
 		err:        nil,
 		focused:    true,
-		msgBox:     NewMessageBox(messageBoxTitle, messageBoxMessage),
+		msgBox:     NewConfirmBoxModel(messageBoxTitle, messageBoxMessage),
 		viewport:   viewport.New(0, 0),
 	}
 }

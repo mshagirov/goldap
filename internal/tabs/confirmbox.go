@@ -116,7 +116,7 @@ func (m ConfirmBoxModel) View() string {
 	return renderedContent
 }
 
-func NewMessageBox(title, message string) ConfirmBoxModel {
+func NewConfirmBoxModel(title, message string) ConfirmBoxModel {
 	return ConfirmBoxModel{
 		title:      title,
 		message:    message,
@@ -127,8 +127,8 @@ func NewMessageBox(title, message string) ConfirmBoxModel {
 	}
 }
 
-func RunMessageBox(title, message string) MessageBoxResult {
-	m := NewMessageBox(title, message)
+func RunConfirmBox(title, message string) MessageBoxResult {
+	m := NewConfirmBoxModel(title, message)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if result, err := p.Run(); err != nil {
 		return ResultCancel // Default to cancel on error

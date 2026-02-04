@@ -59,13 +59,22 @@ func main() {
 			tableIndex = state.TabId
 			attrNames, updates := tabs.RunAddForm(state)
 			if updates != nil {
-				if err := LdapApi.AddEntry(state.FormInfo.DN, attrNames, updates); err != nil {
-					log.Println(err)
-				} else {
-					log.Println("Added:", state.FormInfo.DN, "to", state.FormInfo.TableName)
-				}
+				title := "Add Entry"
+				message := fmt.Sprintf("Add %s to %s?", state.FormInfo.DN, state.FormInfo.TableName)
+				if tabs.RunConfirmBox(title, message) == tabs.ResultConfirm {
+					if err := LdapApi.AddEntry(state.FormInfo.DN, attrNames, updates); err != nil {
+						title = "Add Failed"
+						message = fmt.Sprintf("Failed to add entry to '%v': %v", state.FormInfo.TableName, err)
+						tabs.RunMessageBox(title, message)
+						log.Println(err)
+					} else {
+						title = "Add Successful"
+						message = fmt.Sprintf("Successfully added %s to %s", state.FormInfo.DN, state.FormInfo.TableName)
+						tabs.RunMessageBox(title, message)
+					}
 
-				reload_model = true
+					reload_model = true
+				}
 			}
 		case tabs.UpdateCmd:
 			state.FormInfo.Api = LdapApi
@@ -75,11 +84,19 @@ func main() {
 			tableIndex = state.TabId
 			attrNames, updates := tabs.RunUpdateForm(state)
 
-			if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
-				log.Println(err)
-			} else {
-				for k := range updates {
-					log.Println("Updated:", state.FormInfo.DN, attrNames[k])
+			title := "Update Entry"
+			message := fmt.Sprintf("Update %s?", state.FormInfo.DN)
+			if tabs.RunConfirmBox(title, message) == tabs.ResultConfirm {
+				if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
+					title = "Update Failed"
+					message = fmt.Sprintf("Failed to update entry: %v", err)
+					tabs.RunMessageBox(title, message)
+					log.Println(err)
+
+				} else {
+					title = "Update Successful"
+					message = fmt.Sprintf("Successfully updated %s", state.FormInfo.DN)
+					tabs.RunMessageBox(title, message)
 				}
 			}
 			reload_model = true
