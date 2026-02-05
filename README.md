@@ -6,6 +6,14 @@ A TUI app for managing LDAP POSIX accounts and groups
     <img src="./demo.gif" width="100%" alt="goldap demo">
 </p>
 
+## Motivation
+
+- Are you tired of using bash scripts or outdated desktop apps for managing your LDAP users?
+- You don't want to write a [`ldif`](./scripts/0-ous.ldif) or a long query in the terminal.
+- You need a quick way to update your LDAP entries and get on with your life?
+
+Me too. So I wrote `goldap` to do the above using a user-friendly app in a terminal.
+
 ## Features
 
 - Browsing users and groups (POSIX accounts and groups in LDAP).
