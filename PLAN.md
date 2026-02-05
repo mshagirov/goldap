@@ -4,11 +4,10 @@
 - [x] Saving confirmation UI: "Save changes?" ✅
 - [x] Implement viewport for forms TUI ✅
 - [x] Save updates to ldap (ldap API) ✅
-- [ ] Creating new LDAP entry
-  - [ ] use forms UI backend (UI) to create a new LDAP attr
-  - [ ] save newly created entry (ldap API)
-- [ ] Verification/Result display UI after updates to LDAP
-- [ ] Sort tables based on first column
-- [ ] Input validation
-- [ ] Deleting ldap entries
+- [x] Creating new LDAP entry ✅
+- [x] Verification/Result display UI after updates to LDAP ✅
+- [x] Deleting ldap entries ✅
+- [ ] Fix viewport for tabs UI ‼️
+- [ ] Move Confirmation Dialogue box outside form UI model
 - [ ] Modifying/moving DN record
+- [ ] Sort tables based on first column
