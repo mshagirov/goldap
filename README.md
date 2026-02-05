@@ -28,9 +28,9 @@ used during the installation process and not required after building `goldap`.
     go install github.com/mshagirov/goldap@latest
     ```
 1. Start GoLDAP by simply entering:
-```bash
-goldap
-```
+    ```bash
+    goldap
+    ```
 
 ## Navigation commands and keybindings
 
