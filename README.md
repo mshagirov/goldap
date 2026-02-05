@@ -35,6 +35,9 @@ used during the installation process and not required after building `goldap`.
     ```bash
     go install github.com/mshagirov/goldap@latest
     ```
+1. Create a `.goldapconfig.json` configuration file in your home folder and enter
+your LDAP URL, admin and base DN (an example configuration file is shown when
+`goldap` can't find one).
 1. Start GoLDAP by simply entering:
     ```bash
     goldap
@@ -51,3 +54,63 @@ used during the installation process and not required after building `goldap`.
 |            `ctrl-d`           | Delete an entry from LDAP (current tab)       |
 |         `/` or `?`   | Search (press `enter` to change the focus to the table)|
 |    `esc` and `ctrl-c`         | Exit program or cancel search |
+
+## Configuration
+
+The configuration file `.goldapconfig.json` must be located in *user's home folder*.
+The configuration must specify LDAP server details,
+
+- URL
+- Base DN
+- Admin DN
+
+E.g.:
+
+```json
+{
+  "LDAP_URL":"ldap://localhost:8389",
+  "LDAP_BASE_DN":"dc=goldap,dc=sh",
+  "LDAP_ADMIN_DN":"cn=admin,dc=goldap,dc=sh"
+}
+```
+
+Configuration may also contain optional preferred attributes and *defaults* an
+*templates* to be used when creating *new* entries. GoLDAP supports basic templates,
+where a template (`{{ATTRIBUTE_NAME}}`) is replaced by a value of
+a given attribute. Generally used for home folders and emails as shown below.
+
+```json
+{
+  "LDAP_URL":"ldap://localhost:8389",
+  "LDAP_BASE_DN":"dc=goldap,dc=sh",
+  "LDAP_ADMIN_DN":"cn=admin,dc=goldap,dc=sh",
+
+  "Users": [
+    { "Name": "ou", "Value": [ "People" ] },
+    { "Name": "objectClass", "Value": [ "posixAccount", "inetOrgPerson", "top" ] },
+    { "Name": "employeeType", "Value": [ "Staff" ] },
+    { "Name": "uid", "Value": [ "USERNAME" ] },
+    { "Name": "givenName", "Value": [ "NAME" ] },
+    { "Name": "sn", "Value": [ "SURNAME" ] },
+    { "Name": "mail", "Value": [ "{{uid}}@goldap.sh" ] },
+    { "Name": "uidNumber", "Value": [ "1234" ] },
+    { "Name": "gidNumber", "Value": [ "Enter group gidNumber, e.g., 100" ] },
+    { "Name": "homeDirectory", "Value": [ "/home/{{uid}}" ] },
+    { "Name": "userPassword", "Value": [ "password" ] },
+    { "Name": "description", "Value": [ "description" ] }
+  ],
+  "Groups": [
+    { "Name": "ou", "Value": [ "" ] },
+    { "Name": "objectClass", "Value": [ "top", "posixGroup" ] },
+    { "Name": "cn", "Value": [ "Group's name" ] },
+    { "Name": "gidNumber", "Value": [ "" ] },
+    { "Name": "member", "Value": [ "asimov", "hseldon", "rdolivaw", "..." ] },
+    { "Name": "memberUid", "Value": [ "asimov", "hseldon", "rdolivaw", "..." ] }
+  ],
+  "OrgUnits": [
+    { "Name": "ou", "Value": [ "" ] },
+    { "Name": "objectClass", "Value": [ "top", "organizationalUnit" ] },
+    { "Name": "description", "Value": [ "description" ] }
+  ]
+}
+```
