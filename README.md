@@ -43,7 +43,9 @@ your LDAP URL, admin and base DN (an example configuration file is shown when
     goldap
     ```
 
-## Navigation commands and keybindings
+## Usage
+
+### Navigation Commands and Keybindings
 
 |               Keys            |          Command         |
 |:-----------------------------:|:------------------------:|
@@ -55,7 +57,7 @@ your LDAP URL, admin and base DN (an example configuration file is shown when
 |         `/` or `?`   | Search (press `enter` to change the focus to the table)|
 |    `esc` and `ctrl-c`         | Exit program or cancel search |
 
-## Configuration
+### Configuration
 
 The configuration file `.goldapconfig.json` must be located in *user's home folder*.
 The configuration must specify LDAP server details,
