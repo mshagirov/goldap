@@ -8,6 +8,21 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
+func SplitAttributeValues(values string) []string {
+	delim := strings.TrimSpace(ValueDelimeter)
+	values = strings.Trim(values, ValueDelimeter)
+
+	split_values := make([]string, 0)
+	for v := range strings.SplitSeq(values, delim) {
+		v = strings.TrimSpace(v)
+		if len(v) < 1 {
+			continue
+		}
+		split_values = append(split_values, v)
+	}
+	return split_values
+}
+
 func GetFirstDnAttr(dn string) (attr, value string, ok bool) {
 	firstDN, _, found := strings.Cut(dn, ",")
 	if !found {

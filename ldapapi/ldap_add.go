@@ -46,8 +46,7 @@ func (api *LdapApi) AddEntry(dn string, attr []string, updates map[int]string) e
 		case "dn", "ou", "dc":
 			continue
 		default:
-			val = strings.Trim(val, ValueDelimeter)
-			values = strings.Split(val, ValueDelimeter)
+			values = SplitAttributeValues(val)
 		}
 		addReq.Attribute(attr_name, values)
 	}

@@ -9,8 +9,7 @@ import (
 func (api *LdapApi) ConstructDnFromUpdates(attrNames []string, updates map[int]string, tableName string) (string, error) {
 	dn_str := strings.TrimSpace(api.Config.LdapBaseDn)
 	if attrs, ok := updates[slices.Index(attrNames, "ou")]; ok {
-		attrs = strings.Trim(attrs, ValueDelimeter)
-		attrs_slice := strings.Split(attrs, ValueDelimeter)
+		attrs_slice := SplitAttributeValues(attrs)
 		slices.Reverse(attrs_slice)
 		for _, val := range attrs_slice {
 			dn_str = fmt.Sprintf("ou=%s,%s", val, dn_str)
@@ -67,8 +66,7 @@ func (api *LdapApi) UpdateHasRequiredObjectClass(attrNames []string, updates map
 	if !ok {
 		return fmt.Errorf("*LdapApi.UpdateHasRequiredObjectClass: 'objectClass' is missing")
 	}
-	attrs = strings.Trim(attrs, ValueDelimeter)
-	values := strings.Split(attrs, ValueDelimeter)
+	values := SplitAttributeValues(attrs)
 	required := "?(unknown entry type)"
 	switch tableName {
 	case "Users":
