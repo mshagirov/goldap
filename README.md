@@ -22,7 +22,7 @@ Me too. So I wrote `goldap` to do the above using a user-friendly app in a termi
 - Adding new entries to POSIX accounts, groups, and OrgUnits.
 - Deleting entries.
 
-## Installation
+## Quick Start
 
 1. Install Go from [webinstall.dev](https://webinstall.dev/golang/)
 or [go.dev](https://go.dev/doc/install). Go is only
