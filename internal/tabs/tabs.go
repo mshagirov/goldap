@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -54,6 +55,9 @@ type Model struct {
 	DN       [][]string
 	State    *State
 	LdapApi  *ldapapi.LdapApi
+
+	viewport viewport.Model
+	ready    bool
 }
 
 func (m Model) Init() tea.Cmd {
@@ -155,6 +159,39 @@ func (m *Model) stopSearch() (tea.Model, tea.Cmd) {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		return m.updateTabsView(msg)
+	case tea.WindowSizeMsg:
+		if !m.ready {
+			m.viewport = viewport.New(msg.Width, msg.Height)
+			m.viewport.SetContent(m.viewContent())
+			m.ready = true
+		} else {
+			m.viewport.SetContent(m.viewContent())
+			m.State.Table.UpdateViewport()
+			m.viewport.Width = msg.Width
+			m.viewport.Height = msg.Height
+		}
+	}
+
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
+	m.viewport, cmd = m.viewport.Update(msg)
+	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
+}
+
+func (m Model) updateTabsView(msg tea.Msg) (tea.Model, tea.Cmd) {
+	_, cmd := m.updateTabs(msg)
+	m.State.Table.UpdateViewport()
+	m.viewport.SetContent(m.viewContent())
+	return m, cmd
+}
+
+func (m *Model) updateTabs(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	insearch, searchFocus := m.getSearchState()
@@ -216,13 +253,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) View() string {
+func (m *Model) viewTabs() string {
 	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		termWidth = 20
 	}
-
-	doc := strings.Builder{}
 
 	var renderedTabs []string
 
@@ -254,6 +289,24 @@ func (m Model) View() string {
 		row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, fillStyle.Render(""))
 	}
 
+	return row
+}
+
+func (m Model) View() string {
+	if !m.ready {
+		return "\n  Initializing..."
+	}
+	return m.viewport.View()
+}
+
+func (m *Model) viewContent() string {
+	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		termWidth = 20
+	}
+
+	doc := strings.Builder{}
+
 	w, h := GetTableDimensions()
 	m.State.Table.SetWidth(w)
 	m.State.Table.SetHeight(h)
@@ -268,8 +321,8 @@ func (m Model) View() string {
 		Width(w - lipgloss.Width(searchField)).
 		Render(fmt.Sprintf("%v", m.CurrentDN()))
 	infoBar := lipgloss.JoinHorizontal(lipgloss.Top, searchField, dnInfo)
-
-	doc.WriteString(row)
+	tabsRow := m.viewTabs()
+	doc.WriteString(tabsRow)
 	doc.WriteString("\n")
 	doc.WriteString(windowStyle.Width(w).Height(h).
 		Render(m.State.Table.View() + "\n" + infoBar),
@@ -309,6 +362,7 @@ func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, a
 		DN:       dn,
 		State:    state,
 		LdapApi:  api,
+		viewport: viewport.New(0, 0),
 	}
 }
 
