@@ -1,4 +1,4 @@
-# GoLDAP
+# GoLDAP : a Friendly Face for Your LDAP Server
 
 A TUI app for managing LDAP POSIX accounts and groups
 
