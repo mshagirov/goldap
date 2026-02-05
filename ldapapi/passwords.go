@@ -21,6 +21,10 @@ func sshaHash(passwordBytes, salt []byte) []byte {
 }
 
 func HashPasswordSSHA(password string, saltLength int) (string, error) {
+	if len(password) > 6 && "{SSHA}" == password[:6] {
+		return password, nil
+	}
+
 	salt := make([]byte, saltLength)
 	if _, err := rand.Read(salt); err != nil {
 		return "", fmt.Errorf("failed to generate random salt")
