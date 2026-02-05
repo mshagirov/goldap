@@ -74,8 +74,10 @@ E.g.:
 }
 ```
 
-Configuration may also contain optional preferred attributes and *defaults* an
-*templates* to be used when creating *new* entries. GoLDAP supports basic templates,
+Configuration may also contain optional preferred or *default* attributes and
+*templates* to be used when creating a *new* entries.
+
+GoLDAP supports basic templates,
 where a template (`{{ATTRIBUTE_NAME}}`) is replaced by a value of
 a given attribute. Generally used for home folders and emails as shown below.
 
@@ -114,3 +116,14 @@ a given attribute. Generally used for home folders and emails as shown below.
   ]
 }
 ```
+
+## Contributing and Extending
+
+If you'd like to contribute, please fork the repository and open a pull request
+to the `main` branch.
+
+### LDAP Development Server
+
+Use docker or podman and [`scripts/local-test-server.sh`](./scripts/local-test-server.sh)
+to start LDAP server for development. Also, take a look at [`AGENTS.md`](./AGENTS.md)
+(can be used with agentic tools).
