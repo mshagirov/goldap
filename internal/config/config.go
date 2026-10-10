@@ -77,7 +77,7 @@ func (c Config) SetBaseDn(baseDn string) error {
 	return nil
 }
 
-func (c Config) SetlAdminDn(adminDn string) error {
+func (c Config) SetAdminDn(adminDn string) error {
 	c.LdapAdminDn = adminDn
 	if err := write(c); err != nil {
 		return fmt.Errorf("Error writing config; %v", err)
