@@ -7,10 +7,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/mshagirov/goldap/ldapapi"
 )
@@ -79,7 +79,7 @@ func initialFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
 			inputs[i].Placeholder = attrNames[i]
 		}
 		inputs[i].CharLimit = inputLimit + lipgloss.Width(attrValues[i])
-		inputs[i].Width = fieldWidth
+		inputs[i].SetWidth(fieldWidth)
 		inputs[i].Prompt = ""
 		inputNames[i] = attrNames[i]
 		if strings.Contains(strings.ToLower(attrNames[i]), "password") {
@@ -102,7 +102,7 @@ func initialFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
 		err:        nil,
 		focused:    true,
 		msgBox:     NewConfirmBoxModel(messageBoxTitle, messageBoxMessage),
-		viewport:   viewport.New(0, 0),
+		viewport:   viewport.New(),
 	}
 }
 
@@ -135,7 +135,7 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if m.focused {
 		switch msg := msg.(type) {
-		case tea.KeyMsg:
+		case tea.KeyPressMsg:
 			switch keypress := msg.String(); keypress {
 			case "ctrl+c":
 				return m, tea.Quit
@@ -147,13 +147,16 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			footerHeight := lipgloss.Height(m.footerView())
 			verticalMarginHeight := headerHeight + footerHeight
 			if !m.ready {
-				m.viewport = viewport.New(msg.Width, msg.Height-verticalMarginHeight)
+				m.viewport = viewport.New(
+					viewport.WithWidth(msg.Width),
+					viewport.WithHeight(msg.Height-verticalMarginHeight),
+				)
 				m.viewport.YPosition = headerHeight
 				m.viewport.SetContent(m.viewForm())
 				m.ready = true
 			} else {
-				m.viewport.Width = msg.Width
-				m.viewport.Height = msg.Height - verticalMarginHeight
+				m.viewport.SetWidth(msg.Width)
+				m.viewport.SetHeight(msg.Height - verticalMarginHeight)
 			}
 		}
 
@@ -175,10 +178,10 @@ func (m formModel) updateViewport(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.viewport.SetContent(m.viewForm())
 
-	if (2*m.index + 2) > m.viewport.Height {
-		m.viewport.SetYOffset(m.viewport.YOffset + 2)
-	} else if 2*m.index < m.viewport.YOffset {
-		m.viewport.SetYOffset(m.viewport.YOffset - 2)
+	if (2*m.index + 2) > m.viewport.Height() {
+		m.viewport.SetYOffset(m.viewport.YOffset() + 2)
+	} else if 2*m.index < m.viewport.YOffset() {
+		m.viewport.SetYOffset(m.viewport.YOffset() - 2)
 	}
 
 	return m, cmd
@@ -191,7 +194,7 @@ func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
 	hasUpdates := len(*m.updated) > 0
 
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch keypress := msg.String(); keypress {
 		case "enter":
 			if _, ok := m.active[m.index]; !ok {
@@ -315,9 +318,15 @@ func (m *formModel) updateConfirmMsg() {
 	}
 }
 
-func (m formModel) View() string {
+func (m formModel) View() tea.View {
+	v := tea.NewView(m.render())
+	v.AltScreen = true
+	return v
+}
+
+func (m formModel) render() string {
 	if !m.focused {
-		return m.msgBox.View()
+		return m.msgBox.render()
 	}
 
 	if !m.ready {
@@ -333,6 +342,14 @@ func (m formModel) View() string {
 	return doc.String()
 }
 
+// withTextStyle applies style to the text of both focused and blurred inputs,
+// so the field color does not depend on focus.
+func withTextStyle(s textinput.Styles, style lipgloss.Style) textinput.Styles {
+	s.Focused.Text = style
+	s.Blurred.Text = style
+	return s
+}
+
 func (m formModel) viewForm() string {
 	doc := strings.Builder{}
 
@@ -340,13 +357,13 @@ func (m formModel) viewForm() string {
 		doc.WriteString(formFieldNameStyle.Width(30).Render(m.inputNames[i]))
 		doc.WriteString("\n")
 		if _, ok := m.active[i]; ok {
-			val.TextStyle = formActiveStyle
+			val.SetStyles(withTextStyle(val.Styles(), formActiveStyle))
 			doc.WriteString(formInputPadding.Render(val.View()))
 		} else if _, ok := (*m.updated)[i]; ok {
-			val.TextStyle = formModifiedStyle
+			val.SetStyles(withTextStyle(val.Styles(), formModifiedStyle))
 			doc.WriteString(formInputPadding.Render(val.View()))
 		} else {
-			val.TextStyle = formBlurredStyle
+			val.SetStyles(withTextStyle(val.Styles(), formBlurredStyle))
 			doc.WriteString(formInputPadding.Render(val.View()))
 		}
 		doc.WriteString("\n")
@@ -426,7 +443,7 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 	updated := make(map[int]string)
 
 	m := initialFormModel(fi.DN, "Save changes for ...", fi.DN, attrVals, attrNames, &updated)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	result, err := p.Run()
 	if err != nil {
@@ -469,7 +486,7 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 		fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName),
 		"", attrVals, attrNames, requiredAtrr, &updated)
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 
 	result, err := p.Run()
 	if err != nil {

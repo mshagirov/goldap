@@ -5,21 +5,21 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
 	"golang.org/x/term"
 )
 
 var (
-	focusedColor = lipgloss.AdaptiveColor{Light: "#DAA520", Dark: "#FFD700"} //lipgloss.Color("215")
+	focusedColor = compat.AdaptiveColor{Light: lipgloss.Color("#DAA520"), Dark: lipgloss.Color("#FFD700")} //lipgloss.Color("215")
 	blurredColor = lipgloss.Color("241")
 
 	focusedStyle = lipgloss.NewStyle().Foreground(focusedColor).PaddingTop(2)
 	blurredStyle = lipgloss.NewStyle().Foreground(blurredColor)
 
-	cursorStyle = focusedStyle
-	noStyle     = lipgloss.NewStyle().PaddingTop(2)
+	noStyle = lipgloss.NewStyle().PaddingTop(2)
 
 	titleText string = `LDAP Administrator Password`
 	titleSyle        = blurredStyle.Bold(true)
@@ -48,15 +48,19 @@ func initialModel() model {
 
 	var t textinput.Model
 	t = textinput.New()
-	t.Cursor.Style = cursorStyle
-	t.Width = 15
+	t.SetWidth(15)
 	t.CharLimit = 30
 
 	t.Placeholder = "Password"
 	t.EchoMode = textinput.EchoPassword
 	t.EchoCharacter = '•'
-	t.PromptStyle = focusedStyle
-	t.TextStyle = focusedStyle
+	s := t.Styles()
+	s.Cursor.Color = focusedColor
+	s.Focused.Prompt = focusedStyle
+	s.Focused.Text = focusedStyle
+	s.Blurred.Prompt = noStyle
+	s.Blurred.Text = noStyle
+	t.SetStyles(s)
 	t.Focus()
 
 	m.inputs[0] = t
@@ -65,12 +69,12 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(tea.SetWindowTitle("GoLDAP | login"), textinput.Blink)
+	return textinput.Blink
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
@@ -98,13 +102,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i := 0; i <= len(m.inputs)-1; i++ {
 				if i == m.focusIndex {
 					cmds[i] = m.inputs[i].Focus()
-					m.inputs[i].PromptStyle = focusedStyle
-					m.inputs[i].TextStyle = focusedStyle
 					continue
 				}
 				m.inputs[i].Blur()
-				m.inputs[i].PromptStyle = noStyle
-				m.inputs[i].TextStyle = noStyle
 			}
 
 			return m, tea.Batch(cmds...)
@@ -126,7 +126,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
 	physicalWidth, physicalHeight, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		physicalWidth, physicalHeight = 20, 20
@@ -160,12 +160,15 @@ func (m model) View() string {
 		lipgloss.Center, // Vertical alignment
 		alignedContents,
 	)
-	return renderedContent
+	v := tea.NewView(renderedContent)
+	v.AltScreen = true
+	v.WindowTitle = "GoLDAP | login"
+	return v
 }
 
 func Run() (string, error) {
 	m := initialModel()
-	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+	if _, err := tea.NewProgram(m).Run(); err != nil {
 		return "", fmt.Errorf("could not start program: %s", err)
 	}
 	secret := m.inputs[0].Value()

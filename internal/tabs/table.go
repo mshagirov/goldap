@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/table"
+	"charm.land/bubbles/v2/table"
 	"golang.org/x/term"
 
 	"github.com/mshagirov/goldap/ldapapi"

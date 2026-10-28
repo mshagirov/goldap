@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/table"
+	"charm.land/bubbles/v2/table"
 	"github.com/go-ldap/ldap/v3"
 )
 

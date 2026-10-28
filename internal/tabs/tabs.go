@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/table"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"golang.org/x/term"
 
 	"github.com/mshagirov/goldap/ldapapi"
@@ -61,7 +61,7 @@ type Model struct {
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.SetWindowTitle("GoLDAP")
+	return nil
 }
 
 func (m Model) CurrentRowId() int {
@@ -160,18 +160,18 @@ func (m *Model) stopSearch() (tea.Model, tea.Cmd) {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return m.updateTabsView(msg)
 	case tea.WindowSizeMsg:
 		if !m.ready {
-			m.viewport = viewport.New(msg.Width, msg.Height)
+			m.viewport = viewport.New(viewport.WithWidth(msg.Width), viewport.WithHeight(msg.Height))
 			m.viewport.SetContent(m.viewContent())
 			m.ready = true
 		} else {
 			m.viewport.SetContent(m.viewContent())
 			m.State.Table.UpdateViewport()
-			m.viewport.Width = msg.Width
-			m.viewport.Height = msg.Height
+			m.viewport.SetWidth(msg.Width)
+			m.viewport.SetHeight(msg.Height)
 		}
 	}
 
@@ -197,7 +197,7 @@ func (m *Model) updateTabs(msg tea.Msg) (tea.Model, tea.Cmd) {
 	insearch, searchFocus := m.getSearchState()
 
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "q":
 			if insearch && msg.String() != "q" {
@@ -285,18 +285,22 @@ func (m *Model) viewTabs() string {
 
 	row := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
 	if remainingWidth := termWidth - lipgloss.Width(row); remainingWidth > 0 {
-		fillStyle := fillerBorderStyle.Width(remainingWidth - 1)
+		fillStyle := fillerBorderStyle.Width(remainingWidth)
 		row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, fillStyle.Render(""))
 	}
 
 	return row
 }
 
-func (m Model) View() string {
-	if !m.ready {
-		return "\n  Initializing..."
+func (m Model) View() tea.View {
+	s := "\n  Initializing..."
+	if m.ready {
+		s = m.viewport.View()
 	}
-	return m.viewport.View()
+	v := tea.NewView(s)
+	v.AltScreen = true
+	v.WindowTitle = "GoLDAP"
+	return v
 }
 
 func (m *Model) viewContent() string {
@@ -324,7 +328,7 @@ func (m *Model) viewContent() string {
 	tabsRow := m.viewTabs()
 	doc.WriteString(tabsRow)
 	doc.WriteString("\n")
-	doc.WriteString(windowStyle.Width(w).Height(h).
+	doc.WriteString(windowStyle.Width(w + windowStyle.GetHorizontalBorderSize()).Height(h + windowStyle.GetVerticalBorderSize()).
 		Render(m.State.Table.View() + "\n" + infoBar),
 	)
 	return docStyle.Width(termWidth).Height(h).Render(doc.String())
@@ -362,12 +366,12 @@ func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, a
 		DN:       dn,
 		State:    state,
 		LdapApi:  api,
-		viewport: viewport.New(0, 0),
+		viewport: viewport.New(),
 	}
 }
 
 func RunTabs(m Model) *State {
-	if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}

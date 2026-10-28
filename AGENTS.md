@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Build Commands
-**Requirements**: Go 1.25.4+ (see go.mod)
+**Requirements**: Go 1.27.2+ (see go.mod)
 - `go build` - Build the application binary (`goldap`)
 - `go run .` - Run the application directly without building
 - `go install .` - Install the binary to $GOPATH/bin
@@ -127,9 +127,9 @@ import (
 - Cache table data between tab switches to avoid redundant LDAP queries
 - Validate user input before constructing LDAP filters
 - Store config with appropriate permissions (0666 for config files)
-- Bubbletea framework for TUI components with Model interface
+- Bubbletea v2 (`charm.land/bubbletea/v2`) for TUI components; `View()` returns `tea.View` (alt screen set via `v.AltScreen`)
 - go-ldap/v3 for LDAP protocol implementation
-- lipgloss for terminal styling and responsive design
+- lipgloss v2 (`charm.land/lipgloss/v2`, adaptive colors via `lipgloss/v2/compat`) and bubbles v2 (`charm.land/bubbles/v2`)
 - golang.org/x/term for terminal size detection
 - Keep third-party dependencies minimal and well-maintained
 

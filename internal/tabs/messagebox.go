@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"golang.org/x/term"
 )
 
@@ -26,7 +26,7 @@ func (m MessageBoxModel) Init() tea.Cmd {
 
 func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch keypress := msg.String(); keypress {
 		default:
 			m.Result = ResultConfirm
@@ -36,7 +36,13 @@ func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m MessageBoxModel) View() string {
+func (m MessageBoxModel) View() tea.View {
+	v := tea.NewView(m.render())
+	v.AltScreen = true
+	return v
+}
+
+func (m MessageBoxModel) render() string {
 	physicalWidth, physicalHeight, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		physicalWidth, physicalHeight = 20, 20
@@ -70,7 +76,7 @@ func (m MessageBoxModel) View() string {
 		physicalHeight,
 		lipgloss.Center,
 		lipgloss.Center,
-		msgBoxStyle.Width(w).Render(b.String()),
+		msgBoxStyle.Width(w+msgBoxStyle.GetHorizontalBorderSize()).Render(b.String()),
 	)
 	return renderedContent
 }
@@ -86,7 +92,7 @@ func NewMessageBoxModel(title, message string) MessageBoxModel {
 
 func RunMessageBox(title, message string) MessageBoxResult {
 	m := NewMessageBoxModel(title, message)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 	if result, err := p.Run(); err != nil {
 		return ResultCancel // cancel on error
 	} else {

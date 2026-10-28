@@ -1,14 +1,17 @@
 package tabs
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
+)
 
 var (
 	// tabs
-	highlightColor    = lipgloss.AdaptiveColor{Light: "#DAA520", Dark: "#FFD700"}
+	highlightColor    = compat.AdaptiveColor{Light: lipgloss.Color("#DAA520"), Dark: lipgloss.Color("#FFD700")}
 	goldbar           = lipgloss.Color("#DAA520")
 	blurredColor      = lipgloss.Color("241")
-	highContrastColor = lipgloss.AdaptiveColor{Light: "#000000", Dark: "#ffffff"}
-	grays             = lipgloss.AdaptiveColor{Light: "#3B3B3B", Dark: "#ADADAD"}
+	highContrastColor = compat.AdaptiveColor{Light: lipgloss.Color("#000000"), Dark: lipgloss.Color("#ffffff")}
+	grays             = compat.AdaptiveColor{Light: lipgloss.Color("#3B3B3B"), Dark: lipgloss.Color("#ADADAD")}
 
 	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
@@ -28,7 +31,7 @@ var (
 	searchBarStyle = lipgloss.NewStyle().Foreground(highContrastColor).Align(lipgloss.Left)
 
 	// tables
-	tableHighlightColor  = lipgloss.AdaptiveColor{Light: "#0014a8", Dark: "#265ef7"}
+	tableHighlightColor  = compat.AdaptiveColor{Light: lipgloss.Color("#0014a8"), Dark: lipgloss.Color("#265ef7")}
 	tableForegroundColor = lipgloss.Color("#ffffff")
 
 	// forms
