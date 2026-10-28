@@ -74,11 +74,7 @@ func initialFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
 	var inputNames []string = make([]string, len(attrNames))
 	for i := range attrNames {
 		inputs[i] = textinput.New()
-		if len(attrValues[i]) > 0 {
-			inputs[i].Placeholder = attrValues[i]
-		} else {
-			inputs[i].Placeholder = attrNames[i]
-		}
+		inputs[i].Placeholder = attrValues[i]
 		inputs[i].CharLimit = inputLimit + lipgloss.Width(attrValues[i])
 		inputs[i].SetWidth(fieldWidth)
 		inputs[i].Prompt = ""
@@ -113,6 +109,11 @@ func InitialAddFormModel(formTitle, messageBoxTitle, messageBoxMessage string,
 	updated *map[int]string,
 ) formModel {
 	m := initialFormModel(formTitle, messageBoxTitle, messageBoxMessage, attrValues, attrNames, updated)
+	for i := range m.inputs {
+		if m.inputs[i].Placeholder == "" {
+			m.inputs[i].Placeholder = attrNames[i]
+		}
+	}
 	m.recordOnMove = true
 	m.alwaysRecordEdit = true
 	m.requiredFields = requiredAttributes
@@ -499,6 +500,11 @@ func (m *formModel) recordInput() {
 func RunUpdateForm(s *State) ([]string, map[int]string) {
 	fi := s.FormInfo
 	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
+	if len(attrNames) > 0 {
+		// config (or default) attributes first, so missing ones can be set too
+		configNames, _, _ := fi.Api.GetNewEntryAttributes(fi.TableName)
+		attrNames, attrVals = ldapapi.OrderAttributes(attrNames, attrVals, configNames)
+	}
 
 	updated := make(map[int]string)
 

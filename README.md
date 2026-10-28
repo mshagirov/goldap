@@ -82,6 +82,10 @@ E.g.:
 Configuration may also contain optional preferred or *default* attributes and
 *templates* to be used when creating a *new* entries.
 
+The same attribute lists set the field order when editing an existing entry:
+configured attributes come first (missing ones are shown as empty fields so
+they can be set), followed by any other attributes of the entry.
+
 GoLDAP supports basic templates,
 where a template (`{{ATTRIBUTE_NAME}}`) is replaced by a value of
 a given attribute. Generally used for home folders and emails as shown below.

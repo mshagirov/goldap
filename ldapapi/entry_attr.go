@@ -26,6 +26,42 @@ func (api *LdapApi) GetNewEntryAttributes(tableName string) ([]string, []string,
 	return names, values, nil
 }
 
+// OrderAttributes orders an entry's attributes by the configured attribute
+// names (matched case-insensitively), then appends the remaining entry
+// attributes in their original order. Configured attributes missing from the
+// entry are added with empty values so they can be set later; objectClass and
+// DN components (dn, ou, dc) are not added since they're not editable here.
+func OrderAttributes(names, values, order []string) ([]string, []string) {
+	orderedNames := make([]string, 0, len(names)+len(order))
+	orderedValues := make([]string, 0, len(names)+len(order))
+	used := make([]bool, len(names))
+
+	for _, attr := range order {
+		if strings.EqualFold(attr, "objectClass") ||
+			slices.ContainsFunc(orderedNames, func(n string) bool { return strings.EqualFold(n, attr) }) {
+			continue
+		}
+		i := slices.IndexFunc(names, func(n string) bool { return strings.EqualFold(n, attr) })
+		switch {
+		case i > -1:
+			orderedNames = append(orderedNames, names[i])
+			orderedValues = append(orderedValues, values[i])
+			used[i] = true
+		case !slices.Contains([]string{"dn", "ou", "dc"}, strings.ToLower(attr)):
+			orderedNames = append(orderedNames, attr)
+			orderedValues = append(orderedValues, "")
+		}
+	}
+
+	for i := range names {
+		if !used[i] {
+			orderedNames = append(orderedNames, names[i])
+			orderedValues = append(orderedValues, values[i])
+		}
+	}
+	return orderedNames, orderedValues
+}
+
 func GetDefaultAttributes(tableName string) ([]string, []string, error) {
 	defaultAttr, ok := DefaultAttributes[tableName]
 	if !ok {
