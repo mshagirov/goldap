@@ -54,14 +54,14 @@ for your architecture (`amd64` for x86-64, `arm64` for ARM), check it against
 `checksums.txt` and install it, e.g. for `v0.2.0-397cc985b3` on x86-64:
 
 ```bash
-V=v0.2.0
+V=0.2.0
 RELEASE=v0.2.0-397cc985b3
 ARCH=amd64   # or arm64
 curl -LO https://github.com/mshagirov/goldap/releases/download/$RELEASE/goldap-$V-linux-$ARCH.tar.gz
 curl -LO https://github.com/mshagirov/goldap/releases/download/$RELEASE/checksums.txt
 sha256sum --ignore-missing -c checksums.txt
-tar -xzf goldap-v0.2.0-linux-$ARCH.tar.gz
-sudo install goldap-v0.2.0-linux-$ARCH/goldap /usr/local/bin/
+tar -xzf goldap-$V-linux-$ARCH.tar.gz
+sudo install goldap-$V-linux-$ARCH/goldap /usr/local/bin/
 ```
 
 Download `goldap-$V-windows-amd64.zip` for Windows OS. On macOS, install with
