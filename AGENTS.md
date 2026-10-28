@@ -29,7 +29,7 @@
 ## Table-Driven Test Patterns
 - Use struct-based test cases for comprehensive coverage: `cases := []struct { name, input, want string }`
 - Use `t.Run(c.name, func(t *testing.T) { ... })` for subtest organization
-- Follow pattern from `ldapapi/tabfilters_test.go` and `ldapapi/parse_test.go`
+- Follow pattern from `ldapapi/parse_formatdn_test.go` and `ldapapi/passwords_test.go`
 - Place test files alongside source files with `*_test.go` naming convention
 - Test both positive and negative cases with descriptive names
 
@@ -45,7 +45,7 @@
 - Build with `go build` to create the `goldap` binary
 - The binary is ignored by git (see .gitignore)
 - Use `scripts/local-test-server.sh` to start a test LDAP server for development
-- Configuration is stored in `~/.goldapconfig.json` (created automatically with example if missing)
+- Configuration is stored in `~/.goldapconfig.json` (not created automatically; if missing, an example JSON is printed and the app exits)
 
 ## Code Style Guidelines
 
@@ -138,24 +138,23 @@ import (
 - Tab navigation: n/tab for next, p/shift+tab for previous
 - Search: / or ? keys; Form mode: enter on table row
 - All LDAP operations use same connection pattern with deferred closing
-- Configuration uses camelCase JSON keys despite Go struct field naming
+- Configuration JSON keys are set via struct tags (`LDAP_URL`, `LDAP_BASE_DN`, `LDAP_ADMIN_DN`, `Users`, `Groups`, `OrgUnits`), not derived from Go field names
 - Table names must match switch cases in `GetTableInfo()` function
-- Table definitions in `ldapapi/tabfilters.go` must match cases in `GetTableInfo()`
+- Table definitions in `ldapapi/constants.go` (`TableNames`, `TableFilters`, `*Cols`/`*Attr`/`*ColsWidth`) must match cases in `GetTableInfo()` (`ldapapi/ldap_search.go`); search results become table rows in `ldapapi/tables.go`
 - Column, attribute, and width arrays are synchronized across all table definitions
-- Tables use sequential numbering starting from 1
+- Table rows are numbered sequentially starting from 1 (first column)
 - Configuration file permissions are set to 0666 when created
 - Missing configuration triggers automatic example JSON output to guide users
 - Use `scripts/local-test-server.sh` for Docker-based OpenLDAP testing
 - Test server creates sample data from `scripts/*.ldif` files (0-ous.ldif, 1-uids.ldif)
-- Test config: localhost:389, base DN "dc=goldap,dc=sh"
+- Test config: ldap://127.0.0.1:8389 (host port mapped by the script), base DN "dc=goldap,dc=sh"
 - Admin credentials: "cn=admin,dc=goldap,dc=sh" with "admin123"
 - Use `go run .` for debugging; binary `goldap` is ignored by git
-- Configuration is stored in `~/.goldapconfig.json` (created automatically with example if missing)
+- Configuration is stored in `~/.goldapconfig.json` (not created automatically; if missing, an example JSON is printed and the app exits)
 - Function signatures returning errors follow pattern: `(result, error)` or just `error`
 - All LDAP operations must use `defer l.Close()` immediately after successful connection
 - Error messages use consistent format: `"OperationName Error; %v"` with semicolon separator
 - Configuration methods follow `Set*` naming pattern: `SetUrl()`, `SetBaseDn()`, `SetAdminDn()`
-- Table operations use sequential numbering starting from 1 (Table1, Table2, etc.)
 
 ## Lint and Quality Assurance
 - Run `go fmt ./...` before every commit to ensure consistent formatting
