@@ -24,6 +24,9 @@ Me too. So I wrote `goldap` to do the above using a user-friendly app in a termi
 
 ## Quick Start
 
+Prebuilt Linux binaries are included with [the latest releases](https://github.com/mshagirov/goldap/releases).
+For building from source follow the steps below:
+
 1. Install Go from [webinstall.dev](https://webinstall.dev/golang/)
 or [go.dev](https://go.dev/doc/install). Go is only
 used during the installation process and not required after building `goldap`.
@@ -42,6 +45,25 @@ your LDAP URL, admin and base DN (an example configuration file is shown when
     ```bash
     goldap
     ```
+
+### Prebuilt Binaries (Linux)
+
+Static Linux binaries (no Go required) are attached to each
+[release](https://github.com/mshagirov/goldap/releases). Download the archive
+for your architecture (`amd64` for x86-64, `arm64` for ARM), check it against
+`checksums.txt` and install it, e.g. for `v0.2.0-397cc985b3` on x86-64:
+
+```bash
+VERSION=v0.2.0-397cc985b3
+ARCH=amd64   # or arm64
+curl -LO https://github.com/mshagirov/goldap/releases/download/$VERSION/goldap-v0.2.0-linux-$ARCH.tar.gz
+curl -LO https://github.com/mshagirov/goldap/releases/download/$VERSION/checksums.txt
+sha256sum --ignore-missing -c checksums.txt
+tar -xzf goldap-v0.2.0-linux-$ARCH.tar.gz
+sudo install goldap-v0.2.0-linux-$ARCH/goldap /usr/local/bin/
+```
+
+On macOS, install with `go install` as shown above.
 
 ## Usage
 
