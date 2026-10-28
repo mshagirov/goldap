@@ -7,6 +7,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"golang.org/x/term"
+
+	"github.com/mshagirov/goldap/internal/mouse"
 )
 
 type ConfirmBoxModel struct {
@@ -61,6 +63,19 @@ func (m ConfirmBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Result = ResultCancel
 			return m, tea.Quit
 		}
+	case tea.MouseClickMsg:
+		if msg.Button != tea.MouseLeft {
+			break
+		}
+		view := m.render()
+		if mouse.Hit(view, m.cancelBtn, msg.X, msg.Y) {
+			m.Result = ResultCancel
+			return m, tea.Quit
+		}
+		if mouse.Hit(view, m.confirmBtn, msg.X, msg.Y) {
+			m.Result = ResultConfirm
+			return m, tea.Quit
+		}
 	}
 	return m, nil
 }
@@ -68,6 +83,7 @@ func (m ConfirmBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m ConfirmBoxModel) View() tea.View {
 	v := tea.NewView(m.render())
 	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
 	return v
 }
 

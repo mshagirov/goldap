@@ -56,6 +56,9 @@ your LDAP URL, admin and base DN (an example configuration file is shown when
 |            `ctrl-d`           | Delete an entry from LDAP (current tab)       |
 |         `/` or `?`   | Search (press `enter` to change the focus to the table)|
 |    `esc` and `ctrl-c`         | Exit program or cancel search |
+|        mouse wheel            | Row/field navigation (tables and forms) |
+|        left click             | Select a row/field; click it again to open the entry (tables) or start editing (forms) |
+|        left click             | Switch tabs, press dialog buttons, focus the login password field |
 
 ### Configuration
 

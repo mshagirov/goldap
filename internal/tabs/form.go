@@ -142,6 +142,19 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "esc", "enter", "tab", "down", "up", "shift+tab", "-":
 				return m.updateViewport(msg)
 			}
+		case tea.MouseWheelMsg:
+			switch msg.Button {
+			case wheelMoveUp:
+				return m.updateViewport(tea.KeyPressMsg{Code: tea.KeyUp})
+			case wheelMoveDown:
+				return m.updateViewport(tea.KeyPressMsg{Code: tea.KeyDown})
+			}
+			return m, nil
+		case tea.MouseClickMsg:
+			if msg.Button == tea.MouseLeft {
+				return m.clickInput(msg.Y)
+			}
+			return m, nil
 		case tea.WindowSizeMsg:
 			headerHeight := lipgloss.Height(m.headerView())
 			footerHeight := lipgloss.Height(m.footerView())
@@ -185,6 +198,45 @@ func (m formModel) updateViewport(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
+}
+
+// clickInput selects the input field at screen line y by stepping through
+// fields like "up"/"down"; a click on the selected field acts like "enter".
+func (m formModel) clickInput(y int) (tea.Model, tea.Cmd) {
+	i, ok := m.inputAt(y)
+	if !ok {
+		return m, nil
+	}
+	if i == m.index {
+		if _, isActive := m.active[i]; isActive {
+			return m, nil
+		}
+		return m.updateViewport(tea.KeyPressMsg{Code: tea.KeyEnter})
+	}
+
+	key := tea.KeyPressMsg{Code: tea.KeyDown}
+	if i < m.index {
+		key = tea.KeyPressMsg{Code: tea.KeyUp}
+	}
+	var (
+		model tea.Model = m
+		cmd   tea.Cmd
+	)
+	for model.(formModel).index != i {
+		model, cmd = model.(formModel).updateViewport(key)
+	}
+	return model, cmd
+}
+
+// inputAt returns the index of the input field rendered at screen line y;
+// each field takes two lines (name and value) in the viewport.
+func (m formModel) inputAt(y int) (int, bool) {
+	top := m.viewport.YPosition
+	if y < top || y >= top+m.viewport.Height() {
+		return 0, false
+	}
+	i := (y - top + m.viewport.YOffset()) / 2
+	return i, i < len(m.inputs)
 }
 
 func (m formModel) updateForm(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -321,6 +373,7 @@ func (m *formModel) updateConfirmMsg() {
 func (m formModel) View() tea.View {
 	v := tea.NewView(m.render())
 	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
 	return v
 }
 

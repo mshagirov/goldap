@@ -32,6 +32,11 @@ func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Result = ResultConfirm
 			return m, tea.Quit
 		}
+	case tea.MouseClickMsg:
+		if msg.Button == tea.MouseLeft {
+			m.Result = ResultConfirm
+			return m, tea.Quit
+		}
 	}
 	return m, nil
 }
@@ -39,6 +44,7 @@ func (m MessageBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m MessageBoxModel) View() tea.View {
 	v := tea.NewView(m.render())
 	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
 	return v
 }
 

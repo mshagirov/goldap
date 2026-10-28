@@ -12,6 +12,7 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/term"
 
 	"github.com/mshagirov/goldap/ldapapi"
@@ -94,20 +95,19 @@ func (m *Model) SetTable() {
 	m.SetCursor()
 }
 
-func (m *Model) nextTab() (tea.Model, tea.Cmd) {
+func (m *Model) selectTab(tabId int) (tea.Model, tea.Cmd) {
 	m.State.TabSates[m.State.TabId].Cursor = m.State.Table.Cursor()
-	// next tab
-	m.State.TabId = (m.State.TabId + 1) % len(m.TabNames)
+	m.State.TabId = tabId
 	m.SetTable()
 	return m, nil
 }
 
+func (m *Model) nextTab() (tea.Model, tea.Cmd) {
+	return m.selectTab((m.State.TabId + 1) % len(m.TabNames))
+}
+
 func (m *Model) prevTab() (tea.Model, tea.Cmd) {
-	m.State.TabSates[m.State.TabId].Cursor = m.State.Table.Cursor()
-	// previous tab
-	m.State.TabId = (m.State.TabId - 1 + len(m.TabNames)) % len(m.TabNames)
-	m.SetTable()
-	return m, nil
+	return m.selectTab((m.State.TabId - 1 + len(m.TabNames)) % len(m.TabNames))
 }
 
 func (m *Model) setFormInfo() { // simplify and consolidate state snapshot and reloading
@@ -162,6 +162,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		return m.updateTabsView(msg)
+	case tea.MouseMsg:
+		return m.updateMouse(msg)
 	case tea.WindowSizeMsg:
 		if !m.ready {
 			m.viewport = viewport.New(viewport.WithWidth(msg.Width), viewport.WithHeight(msg.Height))
@@ -189,6 +191,76 @@ func (m Model) updateTabsView(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.State.Table.UpdateViewport()
 	m.viewport.SetContent(m.viewContent())
 	return m, cmd
+}
+
+// Mouse wheel direction for tables and forms: a wheel-up event moves the
+// selection down the list and wheel-down moves it up.
+const (
+	wheelMoveDown = tea.MouseWheelUp
+	wheelMoveUp   = tea.MouseWheelDown
+)
+
+// updateMouse scrolls the table with the wheel; a left click selects a tab
+// or a row, and a click on the already selected row acts like "enter".
+func (m Model) updateMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
+	mouse := msg.Mouse()
+	switch msg.(type) {
+	case tea.MouseWheelMsg:
+		switch mouse.Button {
+		case wheelMoveUp:
+			m.State.Table.MoveUp(1)
+		case wheelMoveDown:
+			m.State.Table.MoveDown(1)
+		}
+	case tea.MouseClickMsg:
+		if mouse.Button != tea.MouseLeft {
+			break
+		}
+		if tabId, ok := m.tabAt(mouse.X, mouse.Y); ok {
+			if tabId != m.State.TabId {
+				m.selectTab(tabId)
+			}
+			break
+		}
+		idx, ok := m.rowAt(mouse.Y)
+		if !ok {
+			break
+		}
+		if _, searchFocus := m.getSearchState(); searchFocus {
+			m.blurSearch()
+		}
+		// move instead of SetCursor to keep the table's scroll offset
+		if delta := idx - m.State.Table.Cursor(); delta > 0 {
+			m.State.Table.MoveDown(delta)
+		} else if delta < 0 {
+			m.State.Table.MoveUp(-delta)
+		} else {
+			m.State.Cmd = UpdateCmd
+			m.setFormInfo()
+			return m, tea.Quit
+		}
+	}
+	m.State.TabSates[m.State.TabId].Cursor = m.State.Table.Cursor()
+	m.State.Table.UpdateViewport()
+	m.viewport.SetContent(m.viewContent())
+	return m, nil
+}
+
+// rowAt returns the table row index rendered at screen line y. Rows are
+// identified by their number in the first column.
+func (m Model) rowAt(y int) (int, bool) {
+	lines := strings.Split(m.viewport.View(), "\n")
+	if y < 0 || y >= len(lines) {
+		return 0, false
+	}
+	line := strings.TrimLeft(ansi.Strip(lines[y]), "│ ")
+	rowNum, _, _ := strings.Cut(line, " ")
+	for i, row := range m.State.Table.Rows() {
+		if len(row) > 0 && row[0] == rowNum {
+			return i, true
+		}
+	}
+	return 0, false
 }
 
 func (m *Model) updateTabs(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -259,6 +331,17 @@ func (m *Model) viewTabs() string {
 		termWidth = 20
 	}
 
+	row := lipgloss.JoinHorizontal(lipgloss.Top, m.renderTabs()...)
+	if remainingWidth := termWidth - lipgloss.Width(row); remainingWidth > 0 {
+		fillStyle := fillerBorderStyle.Width(remainingWidth)
+		row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, fillStyle.Render(""))
+	}
+
+	return row
+}
+
+// renderTabs renders each tab box; they are drawn left to right from x=0.
+func (m *Model) renderTabs() []string {
 	var renderedTabs []string
 
 	for i, t := range m.TabNames {
@@ -282,14 +365,26 @@ func (m *Model) viewTabs() string {
 		style = style.Border(border)
 		renderedTabs = append(renderedTabs, style.Render(t))
 	}
+	return renderedTabs
+}
 
-	row := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
-	if remainingWidth := termWidth - lipgloss.Width(row); remainingWidth > 0 {
-		fillStyle := fillerBorderStyle.Width(remainingWidth)
-		row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, fillStyle.Render(""))
+// tabAt returns the index of the tab drawn at screen cell x, y.
+func (m *Model) tabAt(x, y int) (int, bool) {
+	y += m.viewport.YOffset()
+	if x < 0 || y < 0 {
+		return 0, false
 	}
-
-	return row
+	for i, t := range m.renderTabs() {
+		if y >= lipgloss.Height(t) {
+			return 0, false
+		}
+		w := lipgloss.Width(t)
+		if x < w {
+			return i, true
+		}
+		x -= w
+	}
+	return 0, false
 }
 
 func (m Model) View() tea.View {
@@ -299,6 +394,7 @@ func (m Model) View() tea.View {
 	}
 	v := tea.NewView(s)
 	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
 	v.WindowTitle = "GoLDAP"
 	return v
 }

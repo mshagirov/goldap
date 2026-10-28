@@ -9,7 +9,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/compat"
+	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/term"
+
+	"github.com/mshagirov/goldap/internal/mouse"
 )
 
 var (
@@ -26,8 +29,9 @@ var (
 	helpStyle        = blurredStyle
 	helpText  string = `(press esc or ctrl+c to exit)`
 
-	focusedButton = lipgloss.NewStyle().Foreground(focusedColor).Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("%s", lipgloss.NewStyle().Foreground(blurredColor).Render("[ Submit ]"))
+	submitText    = "[ Submit ]"
+	focusedButton = lipgloss.NewStyle().Foreground(focusedColor).Render(submitText)
+	blurredButton = fmt.Sprintf("%s", lipgloss.NewStyle().Foreground(blurredColor).Render(submitText))
 
 	contentStyle = lipgloss.NewStyle().
 			Align(lipgloss.Left).
@@ -98,22 +102,53 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focusIndex = len(m.inputs)
 			}
 
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := 0; i <= len(m.inputs)-1; i++ {
-				if i == m.focusIndex {
-					cmds[i] = m.inputs[i].Focus()
-					continue
-				}
-				m.inputs[i].Blur()
-			}
-
-			return m, tea.Batch(cmds...)
+			return m, m.focus(m.focusIndex)
 		}
+	case tea.MouseClickMsg:
+		if msg.Button != tea.MouseLeft {
+			break
+		}
+		view := m.render()
+		for i := range m.inputs {
+			if m.inputRegion(view, i).Contains(msg.X, msg.Y) {
+				return m, m.focus(i)
+			}
+		}
+		if mouse.Hit(view, submitText, msg.X, msg.Y) {
+			return m, tea.Quit
+		}
+		return m, nil
 	}
 
 	cmd := m.updateInputs(msg)
 
 	return m, cmd
+}
+
+// focus focuses input i (or the submit button when i == len(m.inputs)).
+func (m *model) focus(i int) tea.Cmd {
+	m.focusIndex = i
+	cmds := make([]tea.Cmd, len(m.inputs))
+	for j := range m.inputs {
+		if j == i {
+			cmds[j] = m.inputs[j].Focus()
+			continue
+		}
+		m.inputs[j].Blur()
+	}
+	return tea.Batch(cmds...)
+}
+
+// inputRegion returns the clickable area of input i in the rendered view:
+// its prompt followed by the full field width.
+func (m model) inputRegion(view string, i int) mouse.Region {
+	lines := strings.Split(strings.TrimSpace(ansi.Strip(m.inputs[i].View())), "\n")
+	r, ok := mouse.Find(view, strings.TrimSpace(lines[len(lines)-1]))
+	if !ok {
+		return mouse.Region{}
+	}
+	r.Width = max(r.Width, lipgloss.Width(m.inputs[i].Prompt)+m.inputs[i].Width()+1)
+	return r
 }
 
 func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
@@ -127,6 +162,14 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m model) View() tea.View {
+	v := tea.NewView(m.render())
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+	v.WindowTitle = "GoLDAP | login"
+	return v
+}
+
+func (m model) render() string {
 	physicalWidth, physicalHeight, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		physicalWidth, physicalHeight = 20, 20
@@ -160,10 +203,7 @@ func (m model) View() tea.View {
 		lipgloss.Center, // Vertical alignment
 		alignedContents,
 	)
-	v := tea.NewView(renderedContent)
-	v.AltScreen = true
-	v.WindowTitle = "GoLDAP | login"
-	return v
+	return renderedContent
 }
 
 func Run() (string, error) {
