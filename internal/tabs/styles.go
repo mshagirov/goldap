@@ -31,8 +31,8 @@ var (
 	searchBarStyle = lipgloss.NewStyle().Foreground(highContrastColor).Align(lipgloss.Left)
 
 	// tables
-	tableHighlightColor  = compat.AdaptiveColor{Light: lipgloss.Color("#0014a8"), Dark: lipgloss.Color("#265ef7")}
-	tableForegroundColor = lipgloss.Color("#ffffff")
+	tableHighlightColor  = highlightColor // compat.AdaptiveColor{Light: lipgloss.Color("#0014a8"), Dark: lipgloss.Color("#265ef7")}
+	tableForegroundColor = compat.AdaptiveColor{Light: highContrastColor.Dark, Dark: highContrastColor.Light}
 
 	// forms
 	formHeaderStyle    = lipgloss.NewStyle().Foreground(highlightColor).Padding(0, 1).Border(lipgloss.RoundedBorder()).BorderForeground(blurredColor)
