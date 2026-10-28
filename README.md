@@ -51,7 +51,7 @@ your LDAP URL, admin and base DN (an example configuration file is shown when
 Static Linux and Windows binaries (no Go required) are attached to each
 [release](https://github.com/mshagirov/goldap/releases). Download the archive
 for your architecture (`amd64` for x86-64, `arm64` for ARM), check it against
-`checksums.txt` and install it, e.g. for `v0.2.0-397cc985b3` on x86-64:
+`checksums.txt` and install it, e.g. for `v0.2.0-f2f72941b9` on x86-64 Linux:
 
 ```bash
 V=0.2.0
