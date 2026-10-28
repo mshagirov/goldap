@@ -136,3 +136,7 @@ to the `main` branch.
 Use docker or podman and [`scripts/local-test-server.sh`](./scripts/local-test-server.sh)
 to start LDAP server for development. Also, take a look at [`AGENTS.md`](./AGENTS.md)
 (can be used with agentic tools).
+
+## License
+
+[MIT](LICENSE) — Copyright (c) 2026 Murat Shagirov.
