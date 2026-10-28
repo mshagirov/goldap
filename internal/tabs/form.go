@@ -56,6 +56,7 @@ type formModel struct {
 
 	viewport viewport.Model
 	ready    bool // for syncing viewport dimensions
+	width    int  // screen width, for wrapping the header
 }
 
 type FormInfo struct {
@@ -156,6 +157,7 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case tea.WindowSizeMsg:
+			m.width = msg.Width
 			headerHeight := lipgloss.Height(m.headerView())
 			footerHeight := lipgloss.Height(m.footerView())
 			verticalMarginHeight := headerHeight + footerHeight
@@ -164,13 +166,14 @@ func (m formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					viewport.WithWidth(msg.Width),
 					viewport.WithHeight(msg.Height-verticalMarginHeight),
 				)
-				m.viewport.YPosition = headerHeight
 				m.viewport.SetContent(m.viewForm())
 				m.ready = true
 			} else {
 				m.viewport.SetWidth(msg.Width)
 				m.viewport.SetHeight(msg.Height - verticalMarginHeight)
 			}
+			// the wrapped header can change height on resize
+			m.viewport.YPosition = headerHeight
 		}
 
 		if m.editing != editCANCELLED {
@@ -425,7 +428,11 @@ func (m formModel) viewForm() string {
 }
 
 func (m formModel) headerView() string {
-	return formHeaderStyle.Render(m.title)
+	title := m.title
+	if m.width > 0 {
+		title = wrapText(title, boxTextWidth(formHeaderStyle, m.width))
+	}
+	return formHeaderStyle.Render(title)
 }
 
 func (m formModel) footerView() string {

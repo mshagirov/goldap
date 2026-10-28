@@ -94,15 +94,6 @@ func (m ConfirmBoxModel) render() string {
 	}
 
 	var b strings.Builder
-	title := msgTitleStyle.Height(1).Render(m.title)
-	b.WriteString(title)
-	b.WriteString("\n\n")
-
-	msgtext := msgTextStyle.Height(1).Render(m.message)
-	b.WriteString(msgtext)
-	b.WriteString("\n\n")
-
-	w := max(lipgloss.Width(title), lipgloss.Width(msgtext))
 	cancelStyle := &msgFocusedBtnStyle
 	confirmStyle := &msgBlurredBtnStyle
 	if m.confirm {
@@ -114,6 +105,18 @@ func (m ConfirmBoxModel) render() string {
 	confirmBtn := confirmStyle.Render(m.confirmBtn)
 	buttonSpacing := 5
 	minWidth := lipgloss.Width(cancelBtn) + lipgloss.Width(confirmBtn) + buttonSpacing
+
+	// the box is at least as wide as the buttons, so let the text use it
+	textWidth := max(boxTextWidth(msgBoxStyle, physicalWidth), minWidth)
+	title := msgTitleStyle.Render(wrapText(m.title, textWidth))
+	b.WriteString(title)
+	b.WriteString("\n\n")
+
+	msgtext := msgTextStyle.Render(wrapText(m.message, textWidth))
+	b.WriteString(msgtext)
+	b.WriteString("\n\n")
+
+	w := max(lipgloss.Width(title), lipgloss.Width(msgtext))
 	padding := (w - minWidth) / 2
 	if padding < 0 {
 		w = minWidth

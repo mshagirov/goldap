@@ -55,18 +55,20 @@ func (m MessageBoxModel) render() string {
 	}
 
 	var b strings.Builder
-	title := msgTitleStyle.Height(1).Render(m.title)
+	footerTxt := msgBlurredBtnStyle.Render(messageFooter)
+	minWidth := lipgloss.Width(footerTxt)
+
+	// the box is at least as wide as the footer, so let the text use it
+	textWidth := max(boxTextWidth(msgBoxStyle, physicalWidth), minWidth)
+	title := msgTitleStyle.Render(wrapText(m.title, textWidth))
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
-	msgtext := msgTextStyle.Height(1).Render(m.message)
+	msgtext := msgTextStyle.Render(wrapText(m.message, textWidth))
 	b.WriteString(msgtext)
 	b.WriteString("\n\n")
 
 	w := max(lipgloss.Width(title), lipgloss.Width(msgtext))
-
-	footerTxt := msgBlurredBtnStyle.Render(messageFooter)
-	minWidth := lipgloss.Width(footerTxt)
 	if ((w - minWidth) / 2) < 0 {
 		w = minWidth
 	}

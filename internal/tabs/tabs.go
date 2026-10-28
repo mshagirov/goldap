@@ -417,9 +417,11 @@ func (m *Model) viewContent() string {
 		searchField = searchBarStyle.Render(s.View())
 	}
 
+	// truncate: wrapping would grow the fixed-height table frame
+	dnWidth := w - lipgloss.Width(searchField)
 	dnInfo := infoBarStyle.
-		Width(w - lipgloss.Width(searchField)).
-		Render(fmt.Sprintf("%v", m.CurrentDN()))
+		Width(dnWidth).
+		Render(ansi.Truncate(m.CurrentDN(), dnWidth, "…"))
 	infoBar := lipgloss.JoinHorizontal(lipgloss.Top, searchField, dnInfo)
 	tabsRow := m.viewTabs()
 	doc.WriteString(tabsRow)
