@@ -63,6 +63,7 @@ case "$1" in
     ;;
   stop)
     "$APP" stop "$CONTAINER_NAME"
+    echo "Container stopped, bye!"
     exit 0
     ;;
 esac
@@ -105,6 +106,13 @@ else
     -w "$LDAP_ADMIN_PASSWORD" \
     -f "${SOURCE_PATH}/1-uids.ldif"
 
-  echo "LDAP URL: $LDAP_URL"
+  URL_INFO="LDAP URL: $LDAP_URL"
+  length=${#URL_INFO}
+  printf -v LINE "%$((${#URL_INFO} + 2))s"
+  TOP="${LINE// /─}"
+  printf "\n┎${TOP}┐\n"
+  echo "┃ LDAP URL: $LDAP_URL │"
+  BTM="${LINE// /━}"
+  printf "┗${BTM}┙\n"
   show_status
 fi
