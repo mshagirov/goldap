@@ -78,6 +78,7 @@ Download `goldap-$V-windows-amd64.zip` for Windows OS. On macOS, install with
 |             `enter`           | Open an entry (row) for viewing and editing   |
 |            `ctrl-a`           | Add a new entry to LDAP (current tab)         |
 |            `ctrl-d`           | Delete an entry from LDAP (current tab)       |
+|            `ctrl-r`           | Reload all tables, preserving the current tab and row positions |
 |         `/` or `?`   | Search (press `enter` to change the focus to the table)|
 |    `esc` and `ctrl-c`         | Exit program or cancel search |
 |        mouse wheel            | Row/field navigation (tables and forms) |

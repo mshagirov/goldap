@@ -4,8 +4,8 @@
 
 - Go **1.27.2+** is required by `go.mod`. Build with `go build`; run the TUI with `go run .` (both root Go files are needed).
 - Before committing Go changes: `go fmt ./... && go vet ./... && go test ./...`. Use `go test -race ./...` for concurrency changes.
-- Tests currently live in `ldapapi` and need no LDAP server. Focused example: `go test -v -run '^TestFormatDNFilter$' ./ldapapi`; package suite: `go test ./ldapapi`.
-- `scripts/tag.sh 1.2.3` publishes a release: it pushes `v1.2.3-<10-character hash>`, replaces `dist/`, cross-builds Linux amd64/arm64 and Windows amd64, and invokes `gh release create`. It does not stop on failed checks; run verification separately before using it.
+- Tests in the root, `ldapapi`, `internal/tabs` and `internal/ui` need no LDAP server. Focused example: `go test -v -run '^TestFormatDNFilter$' ./ldapapi`; form/dialog validation: `go test ./internal/tabs`.
+- `scripts/tag.sh 1.2.3` requires a clean worktree and authenticated `gh`; it verifies/builds before pushing `v1.2.3-<10-character hash>` and publishing the latest release (Linux amd64/arm64, Windows amd64, checksums). It replaces `dist/`. Set `RELEASE_NOTES_FILE` to use custom notes instead of generated notes.
 
 ## Local LDAP setup
 
@@ -13,14 +13,15 @@
 - The script starts `goldap-test` and seeds `scripts/0-ous.ldif` then `scripts/1-uids.ldif` only when starting the container. An already-running container is not reseeded.
 - Test connection: `ldap://127.0.0.1:8389`, base DN `dc=goldap,dc=sh`, admin DN `cn=admin,dc=goldap,dc=sh`, password `admin123`.
 - Create `~/.goldapconfig.json` manually; there is no config-path flag. JSON keys are `LDAP_URL`, `LDAP_BASE_DN`, `LDAP_ADMIN_DN`, with optional `Users`, `Groups`, `OrgUnits` attribute lists (see `README.md`). Missing/invalid config or an empty URL prints an example and exits; it does not create the file.
-- Use the seeded directory for manual testing: `getFirstMissingInt` in `ldapapi/ldap_search.go` currently assumes nonempty user/group ID lists.
+- `MIN_UID_NUM`/`MIN_GID_NUM` optionally set positive lower bounds for ID suggestions. Without them, use the first gap above the lowest existing ID; empty lists fall back to 1.
 
 ## Execution model
 
-- The entrypoint is root `main.go`, with table loading in `load_tabs.go`. Login, tabs, forms and dialogs each run their own `tea.Program`; there is no single root model. Tabs return a `tabs.State` command to the outer loop, which performs LDAP writes.
-- All tables load up front. `reload_model` clears the LDAP cache and rebuilds all tables after attempted writes; ordinary tab switches reuse loaded data.
+- The entrypoint is root `main.go`, with table loading in `load_tabs.go`. `internal/ui.Session` owns one persistent `tea.Program`; screen runners use its `Run` method. A child's `tea.Quit` returns the screen to the outer loop without leaving the alternate screen. Close the session before stderr fallback output.
+- All tables load concurrently up front, preserving `TableNames` order. `reload_model` stages fresh tables and an LDAP cache after attempted writes or Ctrl+R; wait for every loader and replace them only on success. Failed reloads retain the existing model/cache; ordinary tab switches reuse loaded data.
 - Use Charm **v2** imports (`charm.land/bubbletea/v2`, `bubbles/v2`, `lipgloss/v2`). `View()` returns `tea.View`; screens set `AltScreen` and `MouseModeCellMotion` there and handle `tea.KeyPressMsg`.
 - Mouse hit-testing uses rendered text and terminal-cell widths (`internal/mouse`); layout/label changes must keep click targets aligned, including ANSI styling and wide characters.
+- Add/confirmation/message runners return errors separately from cancellation. Route failures through `showMessage`; if the dialog itself fails, print the original result to stderr and leave the TUI so it stays visible.
 
 ## Coupled data contracts
 
