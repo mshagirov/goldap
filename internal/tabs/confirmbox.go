@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/mshagirov/goldap/internal/mouse"
+	"github.com/mshagirov/goldap/internal/ui"
 )
 
 type ConfirmBoxModel struct {
@@ -59,7 +61,7 @@ func (m ConfirmBoxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.confirm = !m.confirm
 			return m, nil
 
-		case "esc":
+		case "esc", "ctrl+c":
 			m.Result = ResultCancel
 			return m, tea.Quit
 		}
@@ -148,16 +150,23 @@ func NewConfirmBoxModel(title, message string) ConfirmBoxModel {
 		confirm:    false,
 		cancelBtn:  "[C]ancel",
 		confirmBtn: "[S]ave",
-		Result:     ResultConfirm,
+		Result:     ResultCancel,
 	}
 }
 
-func RunConfirmBox(title, message string) MessageBoxResult {
+func RunConfirmBox(runner ui.Runner, title, message string) (MessageBoxResult, error) {
 	m := NewConfirmBoxModel(title, message)
-	p := tea.NewProgram(m)
-	if result, err := p.Run(); err != nil {
-		return ResultCancel // Default to cancel on error
-	} else {
-		return result.(ConfirmBoxModel).Result
+	return runConfirmation(func() (tea.Model, error) { return runner.Run(m) })
+}
+
+func runConfirmation(run func() (tea.Model, error)) (MessageBoxResult, error) {
+	result, err := run()
+	if err != nil {
+		return ResultCancel, fmt.Errorf("Confirmation dialog Error; %w", err)
 	}
+	box, ok := result.(ConfirmBoxModel)
+	if !ok {
+		return ResultCancel, fmt.Errorf("Confirmation dialog Error; unexpected result %T", result)
+	}
+	return box.Result, nil
 }

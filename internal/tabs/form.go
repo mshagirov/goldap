@@ -2,7 +2,6 @@ package tabs
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"slices"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/mshagirov/goldap/internal/ui"
 	"github.com/mshagirov/goldap/ldapapi"
 )
 
@@ -497,7 +497,7 @@ func (m *formModel) recordInput() {
 	}
 }
 
-func RunUpdateForm(s *State) ([]string, map[int]string) {
+func RunUpdateForm(runner ui.Runner, s *State) ([]string, map[int]string, error) {
 	fi := s.FormInfo
 	attrNames, attrVals := fi.Api.GetAttrWithDN(fi.DN, fi.TableName)
 	if len(attrNames) > 0 {
@@ -507,14 +507,14 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 	}
 
 	updated := make(map[int]string)
+	if len(attrNames) == 0 {
+		return nil, nil, fmt.Errorf("Update form Error; could not load attributes for '%s'", fi.DN)
+	}
 
 	m := initialFormModel(fi.DN, "Save changes for ...", fi.DN, attrVals, attrNames, &updated)
-	p := tea.NewProgram(m)
-
-	result, err := p.Run()
+	result, err := runner.Run(m)
 	if err != nil {
-		log.Fatal(err)
-		return []string{}, nil
+		return nil, nil, fmt.Errorf("Update form Error; %w", err)
 	}
 
 	var updateResult MessageBoxResult
@@ -525,16 +525,22 @@ func RunUpdateForm(s *State) ([]string, map[int]string) {
 	}
 	if updateResult == ResultConfirm {
 		// return updates
-		return attrNames, updated
+		return attrNames, updated, nil
 	}
 
-	return []string{}, nil
+	return nil, nil, nil
 }
 
-func RunAddForm(s *State) ([]string, map[int]string) {
+func RunAddForm(runner ui.Runner, s *State) ([]string, map[int]string, error) {
 	updated := make(map[int]string)
 
-	attrNames, attrVals, _ := s.FormInfo.Api.GetNewEntryAttributes(s.FormInfo.TableName)
+	attrNames, attrVals, err := s.FormInfo.Api.GetNewEntryAttributes(s.FormInfo.TableName)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(attrNames) == 0 {
+		return nil, nil, fmt.Errorf("Add form Error; no attributes configured for '%s'", s.FormInfo.TableName)
+	}
 
 	if attrName, nextId, ok := s.FormInfo.Api.GetNextIdNumber(s.FormInfo.TableName); ok {
 		if i := slices.Index(attrNames, attrName); i > -1 {
@@ -552,51 +558,55 @@ func RunAddForm(s *State) ([]string, map[int]string) {
 		fmt.Sprintf("Adding new entry to %s ...", s.FormInfo.TableName),
 		"", attrVals, attrNames, requiredAtrr, &updated)
 
-	p := tea.NewProgram(m)
-
-	result, err := p.Run()
+	result, err := runner.Run(m)
 	if err != nil {
-		log.Fatal(err)
-		return []string{}, nil
+		return nil, nil, fmt.Errorf("Add form Error; %w", err)
 	}
 
-	var updateResult MessageBoxResult
-	if msgBox, ok := result.(ConfirmBoxModel); ok {
-		updateResult = msgBox.Result
-	} else {
-		updateResult = ResultCancel
+	// Quitting the form itself (ctrl+c) is an intentional cancellation.
+	if _, cancelled := result.(formModel); cancelled {
+		return nil, nil, nil
 	}
-
+	updateResult, err := runConfirmation(func() (tea.Model, error) { return result, nil })
+	if err != nil {
+		return nil, nil, err
+	}
 	if updateResult == ResultConfirm {
-		for id, attrName := range attrNames {
-			_, ok := updated[id]
-			_, req := requiredAtrr[id]
-			if req && !ok && !strings.Contains(strings.ToLower(attrName), "member") {
-				log.Printf("Error: missing '%v' for adding new entry to '%v'", s.FormInfo.TableName, attrName)
-				return []string{}, nil
-			}
-		}
-
-		if err := s.FormInfo.Api.UpdateHasRequiredObjectClass(attrNames, updated, s.FormInfo.TableName); err != nil {
-			log.Println(err)
-			return []string{}, nil
-		}
-
-		dn_str, err := s.FormInfo.Api.ConstructDnFromUpdates(attrNames, updated, s.FormInfo.TableName)
+		attrNames, err = prepareAddEntry(&s.FormInfo, attrNames, updated)
 		if err != nil {
-			log.Println(err)
-			return []string{}, nil
-		} else {
-			s.FormInfo.DN = dn_str
+			return nil, nil, err
 		}
 
-		if err := s.FormInfo.Api.AppendCnIfUserForm(&attrNames, &updated, s.FormInfo.TableName); err != nil {
-			log.Println(err)
-			return []string{}, nil
-		}
-
-		return attrNames, updated
+		return attrNames, updated, nil
 	}
 
-	return []string{}, nil
+	return nil, nil, nil
+}
+
+// prepareAddEntry validates the confirmed values before any LDAP write.
+func prepareAddEntry(fi *FormInfo, attrNames []string, updated map[int]string) ([]string, error) {
+	required := ldapapi.GetRequiredAttributesSet(attrNames, fi.TableName)
+	for id, attrName := range attrNames {
+		value, ok := updated[id]
+		_, req := required[id]
+		if req && (!ok || strings.TrimSpace(value) == "") && !strings.Contains(strings.ToLower(attrName), "member") {
+			return nil, fmt.Errorf("Add form Error; missing required attribute '%s' for '%s'", attrName, fi.TableName)
+		}
+	}
+
+	if err := fi.Api.UpdateHasRequiredObjectClass(attrNames, updated, fi.TableName); err != nil {
+		return nil, err
+	}
+
+	dn, err := fi.Api.ConstructDnFromUpdates(attrNames, updated, fi.TableName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := fi.Api.AppendCnIfUserForm(&attrNames, &updated, fi.TableName); err != nil {
+		return nil, err
+	}
+
+	fi.DN = dn
+	return attrNames, nil
 }

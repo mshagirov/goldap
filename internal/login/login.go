@@ -13,6 +13,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/mshagirov/goldap/internal/mouse"
+	"github.com/mshagirov/goldap/internal/ui"
 )
 
 var (
@@ -206,12 +207,13 @@ func (m model) render() string {
 	return renderedContent
 }
 
-func Run() (string, error) {
+func Run(runner ui.Runner) (string, error) {
 	m := initialModel()
-	if _, err := tea.NewProgram(m).Run(); err != nil {
+	result, err := runner.Run(m)
+	if err != nil {
 		return "", fmt.Errorf("could not start program: %s", err)
 	}
-	secret := m.inputs[0].Value()
+	secret := result.(model).inputs[0].Value()
 	if len(secret) < 1 {
 		return "", fmt.Errorf("LDAP password not provided")
 	}

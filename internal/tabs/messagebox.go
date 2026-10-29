@@ -1,12 +1,15 @@
 package tabs
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"golang.org/x/term"
+
+	"github.com/mshagirov/goldap/internal/ui"
 )
 
 const (
@@ -98,12 +101,19 @@ func NewMessageBoxModel(title, message string) MessageBoxModel {
 	}
 }
 
-func RunMessageBox(title, message string) MessageBoxResult {
+func RunMessageBox(runner ui.Runner, title, message string) (MessageBoxResult, error) {
 	m := NewMessageBoxModel(title, message)
-	p := tea.NewProgram(m)
-	if result, err := p.Run(); err != nil {
-		return ResultCancel // cancel on error
-	} else {
-		return result.(MessageBoxModel).Result
+	return runMessage(func() (tea.Model, error) { return runner.Run(m) })
+}
+
+func runMessage(run func() (tea.Model, error)) (MessageBoxResult, error) {
+	result, err := run()
+	if err != nil {
+		return ResultCancel, fmt.Errorf("Message dialog Error; %w", err)
 	}
+	box, ok := result.(MessageBoxModel)
+	if !ok {
+		return ResultCancel, fmt.Errorf("Message dialog Error; unexpected result %T", result)
+	}
+	return box.Result, nil
 }

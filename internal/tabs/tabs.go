@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/term"
 
+	"github.com/mshagirov/goldap/internal/ui"
 	"github.com/mshagirov/goldap/ldapapi"
 )
 
@@ -468,10 +469,9 @@ func NewTabsModel(names []string, contents []ldapapi.TableInfo, dn [][]string, a
 	}
 }
 
-func RunTabs(m Model) *State {
-	if _, err := tea.NewProgram(m).Run(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
+func RunTabs(runner ui.Runner, m Model) (*State, error) {
+	if _, err := runner.Run(m); err != nil {
+		return nil, fmt.Errorf("Tabs Error; %w", err)
 	}
-	return m.State
+	return m.State, nil
 }

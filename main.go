@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/mshagirov/goldap/internal/cache"
 	"github.com/mshagirov/goldap/internal/config"
 	"github.com/mshagirov/goldap/internal/login"
 	"github.com/mshagirov/goldap/internal/tabs"
+	"github.com/mshagirov/goldap/internal/ui"
 	"github.com/mshagirov/goldap/ldapapi"
 )
 
@@ -18,8 +20,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	secret, err := login.Run()
+	session := ui.NewSession()
+	defer session.Close()
+
+	secret, err := login.Run(session)
 	if err != nil {
+		session.Close()
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -46,7 +52,12 @@ func main() {
 			reload_model = false
 		}
 
-		state := tabs.RunTabs(m)
+		state, err := tabs.RunTabs(session, m)
+		if err != nil {
+			session.Close()
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
 
 		switch state.Cmd {
 		case tabs.QuitCmd:
@@ -58,14 +69,23 @@ func main() {
 				rowIndices[i] = m.State.TabSates[i].Cursor
 			}
 			tableIndex = state.TabId
-			attrNames, updates := tabs.RunAddForm(state)
+			attrNames, updates, err := tabs.RunAddForm(session, state)
+			if err != nil {
+				if !showMessage(session, FAILURE_MSG,
+					fmt.Sprintf("Failed to add entry to '%v': %v", state.FormInfo.TableName, err)) {
+					return
+				}
+				continue
+			}
 			if len(updates) > 0 {
 				if err := LdapApi.AddEntry(state.FormInfo.DN, attrNames, updates); err != nil {
-					tabs.RunMessageBox(FAILURE_MSG,
-						fmt.Sprintf("Failed to add entry to '%v': %v", state.FormInfo.TableName, err))
+					if !showMessage(session, FAILURE_MSG,
+						fmt.Sprintf("Failed to add entry to '%v': %v", state.FormInfo.TableName, err)) {
+						return
+					}
 				} else {
-					if !showMessage(SUCCESS_MSG,
-						fmt.Sprintf("Added %s to %s", state.FormInfo.DN, state.FormInfo.TableName)) {
+					if !showMessage(session, SUCCESS_MSG,
+						fmt.Sprintf("Added '%s' to '%s'", state.FormInfo.DN, state.FormInfo.TableName)) {
 						return
 					}
 				}
@@ -77,14 +97,22 @@ func main() {
 				rowIndices[i] = m.State.TabSates[i].Cursor
 			}
 			tableIndex = state.TabId
-			attrNames, updates := tabs.RunUpdateForm(state)
+			attrNames, updates, err := tabs.RunUpdateForm(session, state)
+			if err != nil {
+				if !showMessage(session, FAILURE_MSG, fmt.Sprintf("Failed to update: %v", err)) {
+					return
+				}
+				continue
+			}
 
 			if len(updates) > 0 {
 				if err := LdapApi.ModifyAttr(state.FormInfo.DN, attrNames, updates); err != nil {
-					tabs.RunMessageBox(FAILURE_MSG,
-						fmt.Sprintf("Failed to update entry: %v", err))
+					if !showMessage(session, FAILURE_MSG,
+						fmt.Sprintf("Failed to update: %v", err)) {
+						return
+					}
 				} else {
-					if !showMessage(SUCCESS_MSG,
+					if !showMessage(session, SUCCESS_MSG,
 						fmt.Sprintf("Updated %s", state.FormInfo.DN)) {
 						return
 					}
@@ -93,13 +121,23 @@ func main() {
 			}
 		case tabs.DeleteCmd:
 			title := "Deleting Entry"
-			message := fmt.Sprintf("Delete LDAP entry: '%s'?", state.FormInfo.DN)
-			if tabs.RunConfirmBox(title, message) == tabs.ResultConfirm {
+			message := fmt.Sprintf("Delete '%s'?", state.FormInfo.DN)
+			result, err := tabs.RunConfirmBox(session, title, message)
+			if err != nil {
+				if !showMessage(session, FAILURE_MSG,
+					fmt.Sprintf("Failed to confirm deletion of '%s': %v", state.FormInfo.DN, err)) {
+					return
+				}
+				continue
+			}
+			if result == tabs.ResultConfirm {
 				if err := LdapApi.DeleteEntry(state.FormInfo.DN); err != nil {
-					tabs.RunMessageBox(FAILURE_MSG,
-						fmt.Sprintf("Failed to delete entry from '%v': %v", state.FormInfo.TableName, err))
+					if !showMessage(session, FAILURE_MSG,
+						fmt.Sprintf("Failed deleting '%s' from '%v': %v", state.FormInfo.DN, state.FormInfo.TableName, err)) {
+						return
+					}
 				} else {
-					if !showMessage(SUCCESS_MSG,
+					if !showMessage(session, SUCCESS_MSG,
 						fmt.Sprintf("Deleted %s", state.FormInfo.DN)) {
 						return
 					}
@@ -108,4 +146,24 @@ func main() {
 			}
 		}
 	}
+}
+
+// Return to the shell if the dialog fails, so the next TUI cannot hide stderr.
+func showMessage(session *ui.Session, title, message string) bool {
+	run := func(title, message string) (tabs.MessageBoxResult, error) {
+		result, err := tabs.RunMessageBox(session, title, message)
+		if err != nil {
+			session.Close()
+		}
+		return result, err
+	}
+	return reportMessage(title, message, run, os.Stderr)
+}
+
+func reportMessage(title, message string, run func(string, string) (tabs.MessageBoxResult, error), output io.Writer) bool {
+	if _, err := run(title, message); err != nil {
+		fmt.Fprintf(output, "%s: %s\nUnable to display result: %v\n", title, message, err)
+		return false
+	}
+	return true
 }
