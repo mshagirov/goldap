@@ -103,6 +103,13 @@ E.g.:
 }
 ```
 
+Optional `MIN_UID_NUM` and `MIN_GID_NUM` set the starting points for new user
+and group ID suggestions. The first unused number at or above that minimum is
+suggested. When omitted or zero, suggestions use the first gap above the lowest
+existing ID for backwards compatibility. Empty user/group lists start at the
+configured positive minimum, or `1` if none is set. These settings only affect
+suggestions; they do not validate manually entered IDs.
+
 Configuration may also contain optional preferred or *default* attributes and
 *templates* to be used when creating a *new* entries.
 
@@ -119,6 +126,8 @@ a given attribute. Generally used for home folders and emails as shown below.
   "LDAP_URL":"ldap://localhost:8389",
   "LDAP_BASE_DN":"dc=goldap,dc=sh",
   "LDAP_ADMIN_DN":"cn=admin,dc=goldap,dc=sh",
+  "MIN_UID_NUM":1000,
+  "MIN_GID_NUM":1000,
 
   "Users": [
     { "Name": "ou", "Value": [ "People" ] },

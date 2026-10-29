@@ -14,12 +14,14 @@ type LdapAttribute struct {
 }
 
 type Config struct {
-	LdapUrl     string          `json:"LDAP_URL"`
-	LdapBaseDn  string          `json:"LDAP_BASE_DN"`
-	LdapAdminDn string          `json:"LDAP_ADMIN_DN"`
-	Users       []LdapAttribute `json:"Users"`
-	Groups      []LdapAttribute `json:"Groups"`
-	OrgUnits    []LdapAttribute `json:"OrgUnits"`
+	LdapUrl      string          `json:"LDAP_URL"`
+	LdapBaseDn   string          `json:"LDAP_BASE_DN"`
+	LdapAdminDn  string          `json:"LDAP_ADMIN_DN"`
+	MinUidNumber int             `json:"MIN_UID_NUM"`
+	MinGidNumber int             `json:"MIN_GID_NUM"`
+	Users        []LdapAttribute `json:"Users"`
+	Groups       []LdapAttribute `json:"Groups"`
+	OrgUnits     []LdapAttribute `json:"OrgUnits"`
 }
 
 func getConfigPath() (string, error) {

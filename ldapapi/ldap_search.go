@@ -36,9 +36,17 @@ func (api *LdapApi) Search(filter string) (*ldap.SearchResult, error) {
 	return res, err
 }
 
-func getFirstMissingInt(nums []int) int {
+// getFirstMissingInt finds the first unused ID at or above minimum. Without a
+// positive minimum, preserve the existing range, or start at 1 for an empty list.
+func getFirstMissingInt(nums []int, minimum int) int {
 	slices.Sort(nums)
-	missing := nums[0] + 1 // candidate
+	missing := minimum
+	if missing <= 0 {
+		missing = 1
+		if len(nums) > 0 {
+			missing = nums[0] + 1
+		}
+	}
 	for _, n := range nums {
 		if n < missing {
 			continue
@@ -68,7 +76,7 @@ func (api *LdapApi) ListUsers() (*ldap.SearchResult, error) {
 		api.Cache.Add(fmt.Sprintf("uid=%v", uid), entry.DN)
 	}
 
-	api.Cache.Add("nextUidNumber", strconv.Itoa(getFirstMissingInt(uidNumbers)))
+	api.Cache.Add("nextUidNumber", strconv.Itoa(getFirstMissingInt(uidNumbers, api.Config.MinUidNumber)))
 
 	return r, err
 }
@@ -86,7 +94,7 @@ func (api *LdapApi) ListGroups() (*ldap.SearchResult, error) {
 		gidNumbers[i], _ = strconv.Atoi(gidNumber)
 		api.Cache.Add(fmt.Sprintf("gidNumber=%v", gidNumber), entry.DN)
 	}
-	nextAvailableId := strconv.Itoa(getFirstMissingInt(gidNumbers))
+	nextAvailableId := strconv.Itoa(getFirstMissingInt(gidNumbers, api.Config.MinGidNumber))
 	api.Cache.Add("nextGidNumber", nextAvailableId)
 	return r, err
 }
