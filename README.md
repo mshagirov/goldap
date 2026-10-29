@@ -51,11 +51,12 @@ your LDAP URL, admin and base DN (an example configuration file is shown when
 Static Linux and Windows binaries (no Go required) are attached to each
 [release](https://github.com/mshagirov/goldap/releases). Download the archive
 for your architecture (`amd64` for x86-64, `arm64` for ARM), check it against
-`checksums.txt` and install it, e.g. for `v0.2.0-f2f72941b9` on x86-64 Linux:
+`checksums.txt` and install it, e.g. `goldap-0.3.0-linux-amd64.tar.gz` for
+`v0.3.0-e864a4edb7` on x86-64 Linux:
 
 ```bash
-V=0.2.0
-RELEASE=v0.2.0-f2f72941b9
+V=0.3.0
+RELEASE=v0.3.0-e864a4edb7
 ARCH=amd64   # or arm64
 curl -LO https://github.com/mshagirov/goldap/releases/download/$RELEASE/goldap-$V-linux-$ARCH.tar.gz
 curl -LO https://github.com/mshagirov/goldap/releases/download/$RELEASE/checksums.txt
