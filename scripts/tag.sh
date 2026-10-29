@@ -69,8 +69,9 @@ done
 file dist/*/goldap*
 
 cd dist
-tar -czf goldap-$V-linux-amd64.tar.gz goldap-$V-linux-amd64
-tar -czf goldap-$V-linux-arm64.tar.gz goldap-$V-linux-arm64
+# Exclude macOS resource forks and xattrs that GNU tar warns about on Linux.
+COPYFILE_DISABLE=1 tar --no-xattrs -czf goldap-$V-linux-amd64.tar.gz goldap-$V-linux-amd64
+COPYFILE_DISABLE=1 tar --no-xattrs -czf goldap-$V-linux-arm64.tar.gz goldap-$V-linux-arm64
 zip -qr  goldap-$V-windows-amd64.zip  goldap-$V-windows-amd64
 
 shasum -a 256 *.tar.gz *.zip > checksums.txt
