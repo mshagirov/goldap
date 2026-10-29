@@ -64,8 +64,10 @@ func main() {
 					tabs.RunMessageBox(FAILURE_MSG,
 						fmt.Sprintf("Failed to add entry to '%v': %v", state.FormInfo.TableName, err))
 				} else {
-					tabs.RunMessageBox(SUCCESS_MSG,
-						fmt.Sprintf("Successfully added %s to %s", state.FormInfo.DN, state.FormInfo.TableName))
+					if !showMessage(SUCCESS_MSG,
+						fmt.Sprintf("Added %s to %s", state.FormInfo.DN, state.FormInfo.TableName)) {
+						return
+					}
 				}
 				reload_model = true
 			}
@@ -82,8 +84,10 @@ func main() {
 					tabs.RunMessageBox(FAILURE_MSG,
 						fmt.Sprintf("Failed to update entry: %v", err))
 				} else {
-					tabs.RunMessageBox(SUCCESS_MSG,
-						fmt.Sprintf("Successfully updated %s", state.FormInfo.DN))
+					if !showMessage(SUCCESS_MSG,
+						fmt.Sprintf("Updated %s", state.FormInfo.DN)) {
+						return
+					}
 				}
 				reload_model = true
 			}
@@ -95,8 +99,10 @@ func main() {
 					tabs.RunMessageBox(FAILURE_MSG,
 						fmt.Sprintf("Failed to delete entry from '%v': %v", state.FormInfo.TableName, err))
 				} else {
-					tabs.RunMessageBox(SUCCESS_MSG,
-						fmt.Sprintf("Successfully deleted %s", state.FormInfo.DN))
+					if !showMessage(SUCCESS_MSG,
+						fmt.Sprintf("Deleted %s", state.FormInfo.DN)) {
+						return
+					}
 				}
 				reload_model = true
 			}

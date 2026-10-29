@@ -9,7 +9,7 @@
 
 ## Local LDAP setup
 
-- `scripts/local-test-server.sh` requires a running Podman/Docker engine **and host `ldapadd`/`ldapsearch` commands**. It prefers Podman; use `CONTAINER_APP=docker scripts/local-test-server.sh` to override.
+- `scripts/local-test-server.sh start` requires a running Podman/Docker engine **and host `ldapadd`** for seeding. It prefers Podman; use `CONTAINER_APP=docker scripts/local-test-server.sh start` to override. Use `status` to inspect or `stop` to stop/remove the container; no arguments prints usage and exits 1.
 - The script starts `goldap-test` and seeds `scripts/0-ous.ldif` then `scripts/1-uids.ldif` only when starting the container. An already-running container is not reseeded.
 - Test connection: `ldap://127.0.0.1:8389`, base DN `dc=goldap,dc=sh`, admin DN `cn=admin,dc=goldap,dc=sh`, password `admin123`.
 - Create `~/.goldapconfig.json` manually; there is no config-path flag. JSON keys are `LDAP_URL`, `LDAP_BASE_DN`, `LDAP_ADMIN_DN`, with optional `Users`, `Groups`, `OrgUnits` attribute lists (see `README.md`). Missing/invalid config or an empty URL prints an example and exits; it does not create the file.

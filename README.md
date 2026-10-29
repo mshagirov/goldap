@@ -157,8 +157,12 @@ to the `main` branch.
 
 ### LDAP Development Server
 
-Use docker or podman and [`scripts/local-test-server.sh`](./scripts/local-test-server.sh)
-to start LDAP server for development. Also, take a look at [`AGENTS.md`](./AGENTS.md)
+Use docker or podman and `scripts/local-test-server.sh start`
+to start LDAP server for development (requires host `ldapadd` for seeding).
+Use `scripts/local-test-server.sh status` to check its status and
+`scripts/local-test-server.sh stop` to stop and remove the container.
+See [`scripts/local-test-server.sh`](./scripts/local-test-server.sh) or run it with `--help`.
+Also, take a look at [`AGENTS.md`](./AGENTS.md)
 (can be used with agentic tools).
 
 ## License
