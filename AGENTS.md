@@ -1,167 +1,32 @@
-# AGENTS.md
+# Agent guide
 
-## Build Commands
-**Requirements**: Go 1.27.2+ (see go.mod)
-- `go build` - Build the application binary (`goldap`)
-- `go run .` - Run the application directly without building
-- `go install .` - Install the binary to $GOPATH/bin
-- `go fmt ./...` - Format all Go files according to Go standards
-- `go vet ./...` - Run static analysis to find potential issues
-- `go mod tidy` - Clean up module dependencies
-- `go mod download` - Download module dependencies
-- `go clean` - Remove object files and cached files
-- `go get <package>` - Add dependencies to current module
+## Development and verification
 
-## Test Commands
-- `go test ./...` - Run all tests in the project
-- `go test -run <TestName>` - Run a specific test function
-- `go test -v ./...` - Run tests with verbose output
-- `go test -run TestFunction ./path/to/package` - Run specific test in specific package
-- `go test -run TestFormatDNFilter ./ldapapi` - Example: run single test in ldapapi package
-- `go test -v -run TestFormatDNFilter ./ldapapi` - Run single test with verbose output
-- `go test -cover` - Enable code coverage instrumentation
-- `go test -race` - Enable data race detection
-- `go test -bench=.` - Run benchmarks
-- `go test -coverprofile=coverage.out` - Generate coverage profile
-- `go test -timeout=30s` - Set test timeout
-- `go test -count=1` - Disable test caching
+- Go **1.27.2+** is required by `go.mod`. Build with `go build`; run the TUI with `go run .` (both root Go files are needed).
+- Before committing Go changes: `go fmt ./... && go vet ./... && go test ./...`. Use `go test -race ./...` for concurrency changes.
+- Tests currently live in `ldapapi` and need no LDAP server. Focused example: `go test -v -run '^TestFormatDNFilter$' ./ldapapi`; package suite: `go test ./ldapapi`.
+- `scripts/tag.sh 1.2.3` publishes a release: it pushes `v1.2.3-<10-character hash>`, replaces `dist/`, cross-builds Linux amd64/arm64 and Windows amd64, and invokes `gh release create`. It does not stop on failed checks; run verification separately before using it.
 
-## Table-Driven Test Patterns
-- Use struct-based test cases for comprehensive coverage: `cases := []struct { name, input, want string }`
-- Use `t.Run(c.name, func(t *testing.T) { ... })` for subtest organization
-- Follow pattern from `ldapapi/parse_formatdn_test.go` and `ldapapi/passwords_test.go`
-- Place test files alongside source files with `*_test.go` naming convention
-- Test both positive and negative cases with descriptive names
+## Local LDAP setup
 
-## Advanced Build Options
-- `go build -race` - Build with race detector
-- `go build -ldflags="-s -w"` - Strip symbols and reduce binary size
-- `go build -trimpath` - Remove file system paths from executable
-- `go build -x` - Print the commands during build
+- `scripts/local-test-server.sh` requires a running Podman/Docker engine **and host `ldapadd`/`ldapsearch` commands**. It prefers Podman; use `CONTAINER_APP=docker scripts/local-test-server.sh` to override.
+- The script starts `goldap-test` and seeds `scripts/0-ous.ldif` then `scripts/1-uids.ldif` only when starting the container. An already-running container is not reseeded.
+- Test connection: `ldap://127.0.0.1:8389`, base DN `dc=goldap,dc=sh`, admin DN `cn=admin,dc=goldap,dc=sh`, password `admin123`.
+- Create `~/.goldapconfig.json` manually; there is no config-path flag. JSON keys are `LDAP_URL`, `LDAP_BASE_DN`, `LDAP_ADMIN_DN`, with optional `Users`, `Groups`, `OrgUnits` attribute lists (see `README.md`). Missing/invalid config or an empty URL prints an example and exits; it does not create the file.
+- Use the seeded directory for manual testing: `getFirstMissingInt` in `ldapapi/ldap_search.go` currently assumes nonempty user/group ID lists.
 
-## Development Workflow
-- Always run `go fmt ./...` and `go vet ./...` before committing
-- Use `go run .` for quick testing during development
-- Build with `go build` to create the `goldap` binary
-- The binary is ignored by git (see .gitignore)
-- Use `scripts/local-test-server.sh` to start a test LDAP server for development
-- Configuration is stored in `~/.goldapconfig.json` (not created automatically; if missing, an example JSON is printed and the app exits)
+## Execution model
 
-## Code Style Guidelines
+- The entrypoint is root `main.go`, with table loading in `load_tabs.go`. Login, tabs, forms and dialogs each run their own `tea.Program`; there is no single root model. Tabs return a `tabs.State` command to the outer loop, which performs LDAP writes.
+- All tables load up front. `reload_model` clears the LDAP cache and rebuilds all tables after attempted writes; ordinary tab switches reuse loaded data.
+- Use Charm **v2** imports (`charm.land/bubbletea/v2`, `bubbles/v2`, `lipgloss/v2`). `View()` returns `tea.View`; screens set `AltScreen` and `MouseModeCellMotion` there and handle `tea.KeyPressMsg`.
+- Mouse hit-testing uses rendered text and terminal-cell widths (`internal/mouse`); layout/label changes must keep click targets aligned, including ANSI styling and wide characters.
 
-### Import Organization
-- Group imports in three sections with blank lines between: standard library, third-party, local packages
-- Use absolute imports for local packages (full module path)
-- Sort imports alphabetically within each group
-```go
-import (
-    // Standard library
-    "fmt"
-    "os"
-    "strconv"
-    
-    // Third-party packages
-    "github.com/charmbracelet/bubbletea"
-    "github.com/go-ldap/ldap/v3"
-    
-    // Local packages (absolute imports)
-    "github.com/mshagirov/goldap/internal/config"
-    "github.com/mshagirov/goldap/ldapapi"
-)
-```
+## Coupled data contracts
 
-### Naming Conventions
-- **Exported types/functions/constants**: PascalCase (`LdapApi`, `TableInfo`, `Config`)
-- **Unexported variables/functions**: camelCase (`getConfigPath`, `activeTable`)
-- **Package names**: lowercase, single word when possible (`config`, `tabs`, `ldapapi`)
-- **Constants**: PascalCase for exported, camelCase for unexported
-- **Interface names**: often end with `-er` suffix (e.g., `Reader`, `Writer`)
-
-### Error Handling Patterns
-- Always handle errors explicitly, never ignore them
-- Use `fmt.Errorf` for wrapping errors with context: `fmt.Errorf("DialURL Error; %v", err)`
-- Return errors as the last return value: `(result, error)`
-- Use descriptive error messages that include the operation name
-- For configuration errors, provide helpful guidance to users
-- Follow the specific error message format used throughout: `"OperationName Error; %v"`
-- LDAP operations always use deferred connection closing: `defer l.Close()`
-
-### Struct and Type Guidelines
-- Export struct fields that need external access using PascalCase
-- Use JSON tags for configuration structs: `LdapUrl string \`json:"LDAP_URL"\``
-- Define types for domain-specific concepts to improve code clarity
-- Use pointer receivers for methods that modify the struct
-- Use value receivers for methods that don't modify the struct
-
-### Function and Method Patterns
-- Keep functions focused and small
-- Use descriptive function names that explain what they do
-- For API methods, use clear naming like `ListUsers()`, `GetTableInfo()`
-- Use constructor functions for complex initialization: `NewTabsModel()`
-- Group related functionality in the same package
-
-### Package Structure
-- `main/`: Application entry point, minimal and focused
-- `internal/`: Packages not meant for external use
-  - `config/`: Configuration management
-  - `login/`: Authentication logic
-  - `tabs/`: UI tab management
-- `ldapapi/`: LDAP API wrapper, exported for external use
-- Keep related functionality in the same package
-- Avoid circular dependencies between packages
-
-### Testing and UI Development
-- Use `scripts/local-test-server.sh` for Docker-based OpenLDAP testing
-- Test server creates sample data from `scripts/*.ldif` files
-- Mock LDAP connections for unit tests when possible
-- UI components use Bubbletea Model interface with `Init()`, `Update()`, `View()` methods
-- Handle keyboard shortcuts consistently (ctrl+c, q for quit, etc.)
-- Manage focus state properly for input components (login, search, forms)
-- Tables are populated via LDAP search with package-defined columns and attributes
-- Support dynamic table filtering with search functionality
-- Test files should follow `*_test.go` naming convention and be placed in the same package as the code being tested
-
-### Security, Performance and Dependencies
-- Never log LDAP credentials; use echo mode masking for password fields
-- Use deferred connection closing: `defer l.Close()` for all LDAP operations
-- Cache table data between tab switches to avoid redundant LDAP queries
-- Validate user input before constructing LDAP filters
-- Store config with appropriate permissions (0666 for config files)
-- Bubbletea v2 (`charm.land/bubbletea/v2`) for TUI components; `View()` returns `tea.View` (alt screen set via `v.AltScreen`)
-- go-ldap/v3 for LDAP protocol implementation
-- lipgloss v2 (`charm.land/lipgloss/v2`, adaptive colors via `lipgloss/v2/compat`) and bubbles v2 (`charm.land/bubbles/v2`)
-- golang.org/x/term for terminal size detection
-- Keep third-party dependencies minimal and well-maintained
-
-### Project-Specific Patterns and Development Setup
-- Main loop in `main.go` handles tab/form navigation with `reload_model` flag
-- Tab navigation: n/tab for next, p/shift+tab for previous
-- Search: / or ? keys; Form mode: enter on table row
-- All LDAP operations use same connection pattern with deferred closing
-- Configuration JSON keys are set via struct tags (`LDAP_URL`, `LDAP_BASE_DN`, `LDAP_ADMIN_DN`, `Users`, `Groups`, `OrgUnits`), not derived from Go field names
-- Table names must match switch cases in `GetTableInfo()` function
-- Table definitions in `ldapapi/constants.go` (`TableNames`, `TableFilters`, `*Cols`/`*Attr`/`*ColsWidth`) must match cases in `GetTableInfo()` (`ldapapi/ldap_search.go`); search results become table rows in `ldapapi/tables.go`
-- Column, attribute, and width arrays are synchronized across all table definitions
-- Table rows are numbered sequentially starting from 1 (first column)
-- Configuration file permissions are set to 0666 when created
-- Missing configuration triggers automatic example JSON output to guide users
-- Use `scripts/local-test-server.sh` for Docker-based OpenLDAP testing
-- Test server creates sample data from `scripts/*.ldif` files (0-ous.ldif, 1-uids.ldif)
-- Test config: ldap://127.0.0.1:8389 (host port mapped by the script), base DN "dc=goldap,dc=sh"
-- Admin credentials: "cn=admin,dc=goldap,dc=sh" with "admin123"
-- Use `go run .` for debugging; binary `goldap` is ignored by git
-- Configuration is stored in `~/.goldapconfig.json` (not created automatically; if missing, an example JSON is printed and the app exits)
-- Function signatures returning errors follow pattern: `(result, error)` or just `error`
-- All LDAP operations must use `defer l.Close()` immediately after successful connection
-- Error messages use consistent format: `"OperationName Error; %v"` with semicolon separator
-- Configuration methods follow `Set*` naming pattern: `SetUrl()`, `SetBaseDn()`, `SetAdminDn()`
-
-## Lint and Quality Assurance
-- Run `go fmt ./...` before every commit to ensure consistent formatting
-- Run `go vet ./...` to catch potential issues and suspicious constructs
-- Use `go test -race ./...` to detect data races in concurrent code
-- Consider using `golangci-lint` for comprehensive static analysis (if added to project)
-- Ensure all error handling follows the established patterns with descriptive messages
-- Test files should follow `*_test.go` naming convention and be placed in the same package as the code being tested
-- Use table-driven tests for comprehensive test coverage
-- Mock external dependencies (like LDAP connections) in unit tests
+- Table changes span `ldapapi/constants.go` (`TableNames`, `TableFilters`, column names/widths and attribute-to-column maps) and `GetTableInfo` in `ldapapi/ldap_search.go`. Adding a table also requires reviewing table-name switches in `config.GetLdapAttributes`, `GetNextIdNumber`, `ConstructDnFromUpdates` and `UpdateHasRequiredObjectClass`, plus default/required attributes.
+- `ldapapi/tables.go` prepends a 1-based row-number column and keeps `TableInfo.Rows` aligned with `DN`. The Groups “Members” column merges `member` DNs (displayed as uids) and `memberUid` values.
+- `ListUsers`/`ListGroups` populate `internal/cache` with uid→DN, gidNumber→DN and next-ID entries. Group writes resolve/validate member uids against this cache, so loading users is a prerequisite for those writes.
+- Forms return attribute names plus `map[int]string` updates keyed by indices into that name slice. Keep indices aligned when reordering or adding fields. Configured attribute lists supply new-entry templates **and** edit-field order; `OrderAttributes` inserts missing editable attributes with empty values.
+- LDAP operations open/bind/close a connection per call (`defer l.Close()` immediately after a successful dial). Preserve the existing contextual error style, e.g. `"Bind Error; %v"`.
+- `AddEntry`/`ModifyAttr` SSHA-hash `userPassword`; existing `{SSHA}` values pass through. Other ordinary attributes use `SplitAttributeValues` for comma-separated input; membership attributes use cache-backed conversion. Modify uses LDAP `Replace`, not append.
