@@ -40,6 +40,7 @@ const (
 	QuitCmd CmdType = iota
 	UpdateCmd
 	AddCmd
+	ReloadCmd
 	DeleteCmd
 )
 
@@ -302,6 +303,9 @@ func (m *Model) updateTabs(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+d":
 			m.State.Cmd = DeleteCmd
 			m.setFormInfo()
+			return m, tea.Quit
+		case "ctrl+r":
+			m.State.Cmd = ReloadCmd
 			return m, tea.Quit
 		case "enter":
 			if insearch && searchFocus {

@@ -42,14 +42,25 @@ func main() {
 		reload_model = false
 		tableIndex   = 0
 		rowIndices   = make([]int, len(ldapapi.TableNames))
-		m            = createNewTabsModel(tableIndex, rowIndices, LdapApi)
 	)
+	m, err := createNewTabsModel(tableIndex, rowIndices, LdapApi)
+	if err != nil {
+		session.Close()
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	for true {
 		if reload_model {
-			LdapApi.Cache.Clear()
-			m = createNewTabsModel(tableIndex, rowIndices, LdapApi)
 			reload_model = false
+			next, err := createNewTabsModel(tableIndex, rowIndices, LdapApi)
+			if err != nil {
+				if !showMessage(session, "Failure", fmt.Sprintf("Failed to reload tables: '%v'", err)) {
+					return
+				}
+			} else {
+				m = next
+			}
 		}
 
 		state, err := tabs.RunTabs(session, m)
@@ -119,6 +130,13 @@ func main() {
 				}
 				reload_model = true
 			}
+		case tabs.ReloadCmd:
+			tableIndex = state.TabId
+			for i := range rowIndices {
+				rowIndices[i] = state.TabSates[i].Cursor
+			}
+			rowIndices[tableIndex] = state.Table.Cursor()
+			reload_model = true
 		case tabs.DeleteCmd:
 			title := "Deleting Entry"
 			message := fmt.Sprintf("Delete '%s'?", state.FormInfo.DN)
